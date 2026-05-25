@@ -1,1 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Bomb Defuse</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
 
+        h1 {
+            color: #ff3131;
+            text-shadow: 0 0 10px #ff3131, 0 0 20px #ff3131;
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        #timer {
+            font-size: 5rem;
+            color: #ff3131;
+            text-shadow: 0 0 15px #ff3131;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+        }
+
+        .painel {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 20px;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #333;
+            box-shadow: 0 0 30px rgba(255, 49, 49, 0.2);
+        }
+
+        .botao {
+            width: 100px;
+            height: 100px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #222;
+            transition: all 0.3s;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        /* Cores Neon dos Botões */
+        .neon-blue { border: 2px solid #00d2ff; box-shadow: 0 0 10px #00d2ff; }
+        .neon-blue:hover { background: #00d2ff; box-shadow: 0 0 25px #00d2ff; }
+
+        .neon-purple { border: 2px solid #9d00ff; box-shadow: 0 0 10px #9d00ff; }
+        .neon-purple:hover { background: #9d00ff; box-shadow: 0 0 25px #9d00ff; }
+
+        .neon-green { border: 2px solid #39ff14; box-shadow: 0 0 10px #39ff14; }
+        .neon-green:hover { background: #39ff14; box-shadow: 0 0 25px #39ff14; }
+
+        .desativado { opacity: 0.2; cursor: default; pointer-events: none; }
+
+        #mensagem {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>DESARMER A BOMBA</h1>
+        <div id="timer">10.00</div>
+
+        <div class="painel" id="painel">
+            </div>
+
+        <div id="mensagem">Clique nos botões certos!</div>
+    </div>
+
+    <script>
+        let tempo = 10.00;
+        let timerInterval;
+        let bombaAtiva = true;
+        let botoesRestantes = 4; // Precisa acertar 4 para vencer
+        const cores = ['neon-blue', 'neon-purple', 'neon-green'];
+        
+        const timerDisplay = document.getElementById('timer');
+        const painel = document.getElementById('painel');
+        const mensagem = document.getElementById('mensagem');
+
+        // Criar a bomba secreta
+        const botaoExplosivo = Math.floor(Math.random() * 9);
+
+        function iniciarJogo() {
+            for (let i = 0; i < 9; i++) {
+                const btn = document.createElement('button');
+                btn.classList.add('botao');
+                // Atribui uma cor neon aleatória
+                btn.classList.add(cores[Math.floor(Math.random() * cores.length)]);
+                
+                btn.onclick = () => clicarBotao(i, btn);
+                painel.appendChild(btn);
+            }
+
+            timerInterval = setInterval(() => {
+                tempo -= 0.01;
+                timerDisplay.innerText = tempo.toFixed(2);
+                
+                if (tempo <= 0) {
+                    explodir();
+                }
+            }, 10);
+        }
+
+        function clicarBotao(index, elemento) {
+            if (!bombaAtiva) return;
+
+            if (index === botaoExplosivo) {
+                explodir();
+            } else {
+                elemento.classList.add('desativado');
+                botoesRestantes--;
+                
+                if (botoesRestantes === 0) {
+                    vencer();
+                }
+            }
+        }
+
+        function explodir() {
+            bombaAtiva = false;
+            clearInterval(timerInterval);
+            document.body.style.backgroundColor = "#ff3131";
+            timerDisplay.innerText = "BOOM!";
+            mensagem.innerText = "A BOMBA EXPLODIU!";
+            mensagem.style.color = "yellow";
+            setTimeout(() => location.reload(), 2000);
+        }
+
+        function vencer() {
+            bombaAtiva = false;
+            clearInterval(timerInterval);
+            document.body.style.backgroundColor = "#004400";
+            timerDisplay.style.color = "#39ff14";
+            timerDisplay.innerText = "SAFE";
+            mensagem.innerText = "BOMBA DESARMADA COM SUCESSO!";
+            mensagem.style.color = "#39ff14";
+            setTimeout(() => location.reload(), 3000);
+        }
+
+        iniciarJogo();
+    </script>
+</body>
+</html>
