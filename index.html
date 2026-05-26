@@ -2,162 +2,167 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Neon Bomb Defuse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Strike: Minimalist Ninja</title>
     <style>
         body {
-            background-color: #0d0d0d;
-            color: #fff;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
             overflow: hidden;
+            background-color: #1a1a1a;
+            font-family: 'Courier New', Courier, monospace;
         }
-
-        h1 {
-            color: #ff3131;
-            text-shadow: 0 0 10px #ff3131, 0 0 20px #ff3131;
-            font-size: 3rem;
-            margin-bottom: 10px;
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #2c3e50, #000000);
         }
-
-        #timer {
-            font-size: 5rem;
-            color: #ff3131;
-            text-shadow: 0 0 15px #ff3131;
-            font-family: 'Courier New', monospace;
-            margin: 20px 0;
-        }
-
-        .painel {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            gap: 20px;
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #333;
-            box-shadow: 0 0 30px rgba(255, 49, 49, 0.2);
-        }
-
-        .botao {
-            width: 100px;
-            height: 100px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            background: #222;
-            transition: all 0.3s;
-            box-shadow: inset 0 0 10px #000;
-        }
-
-        /* Cores Neon dos Botões */
-        .neon-blue { border: 2px solid #00d2ff; box-shadow: 0 0 10px #00d2ff; }
-        .neon-blue:hover { background: #00d2ff; box-shadow: 0 0 25px #00d2ff; }
-
-        .neon-purple { border: 2px solid #9d00ff; box-shadow: 0 0 10px #9d00ff; }
-        .neon-purple:hover { background: #9d00ff; box-shadow: 0 0 25px #9d00ff; }
-
-        .neon-green { border: 2px solid #39ff14; box-shadow: 0 0 10px #39ff14; }
-        .neon-green:hover { background: #39ff14; box-shadow: 0 0 25px #39ff14; }
-
-        .desativado { opacity: 0.2; cursor: default; pointer-events: none; }
-
-        #mensagem {
-            margin-top: 20px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            height: 30px;
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ecf0f1;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <h1>DESARMER A BOMBA</h1>
-        <div id="timer">10.00</div>
-
-        <div class="painel" id="painel">
-            </div>
-
-        <div id="mensagem">Clique nos botões certos!</div>
+    <div id="ui">
+        <h1>SHADOW STRIKE</h1>
+        <p>Setas: Mover | Espaço: Pular | Z: Ataque Dash</p>
     </div>
+    <canvas id="gameCanvas"></canvas>
 
-    <script>
-        let tempo = 10.00;
-        let timerInterval;
-        let bombaAtiva = true;
-        let botoesRestantes = 4; // Precisa acertar 4 para vencer
-        const cores = ['neon-blue', 'neon-purple', 'neon-green'];
-        
-        const timerDisplay = document.getElementById('timer');
-        const painel = document.getElementById('painel');
-        const mensagem = document.getElementById('mensagem');
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-        // Criar a bomba secreta
-        const botaoExplosivo = Math.floor(Math.random() * 9);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-        function iniciarJogo() {
-            for (let i = 0; i < 9; i++) {
-                const btn = document.createElement('button');
-                btn.classList.add('botao');
-                // Atribui uma cor neon aleatória
-                btn.classList.add(cores[Math.floor(Math.random() * cores.length)]);
-                
-                btn.onclick = () => clicarBotao(i, btn);
-                painel.appendChild(btn);
-            }
+    // Configurações de Física
+    const gravity = 0.8;
+    const friction = 0.85;
 
-            timerInterval = setInterval(() => {
-                tempo -= 0.01;
-                timerDisplay.innerText = tempo.toFixed(2);
-                
-                if (tempo <= 0) {
-                    explodir();
-                }
-            }, 10);
+    class Ninja {
+        constructor() {
+            this.width = 40;
+            this.height = 60;
+            this.x = 100;
+            this.y = canvas.height - 100;
+            this.velX = 0;
+            this.velY = 0;
+            this.speed = 1.2;
+            this.jumpStrength = -18;
+            this.grounded = false;
+            this.isDashing = false;
+            this.dashCooldown = 0;
+            this.color = "#ecf0f1";
         }
 
-        function clicarBotao(index, elemento) {
-            if (!bombaAtiva) return;
+        draw() {
+            // Rastro de Dash (Efeito Visual)
+            if (this.isDashing) {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                ctx.fillRect(this.x - (this.velX * 2), this.y, this.width, this.height);
+            }
 
-            if (index === botaoExplosivo) {
-                explodir();
+            // Corpo do Ninja
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            
+            // Faixa/Olhos
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(this.x, this.y + 15, this.width, 10);
+        }
+
+        update() {
+            // Aplica Gravidade
+            if (!this.grounded) {
+                this.velY += gravity;
+            }
+
+            // Aplica Fricção (Desaceleração natural)
+            this.velX *= friction;
+
+            // Movimentação
+            this.x += this.velX;
+            this.y += this.velY;
+
+            // Colisão com o Chão
+            if (this.y + this.height >= canvas.height - 20) {
+                this.y = canvas.height - 20 - this.height;
+                this.velY = 0;
+                this.grounded = true;
             } else {
-                elemento.classList.add('desativado');
-                botoesRestantes--;
-                
-                if (botoesRestantes === 0) {
-                    vencer();
-                }
+                this.grounded = false;
+            }
+
+            // Limites da Tela
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+
+            if (this.dashCooldown > 0) this.dashCooldown--;
+            if (Math.abs(this.velX) < 5) this.isDashing = false;
+
+            this.draw();
+        }
+
+        jump() {
+            if (this.grounded) {
+                this.velY = this.jumpStrength;
+                this.grounded = false;
             }
         }
 
-        function explodir() {
-            bombaAtiva = false;
-            clearInterval(timerInterval);
-            document.body.style.backgroundColor = "#ff3131";
-            timerDisplay.innerText = "BOOM!";
-            mensagem.innerText = "A BOMBA EXPLODIU!";
-            mensagem.style.color = "yellow";
-            setTimeout(() => location.reload(), 2000);
+        dash(direction) {
+            if (this.dashCooldown === 0) {
+                this.isDashing = true;
+                this.velX = direction * 40;
+                this.dashCooldown = 30;
+            }
         }
+    }
 
-        function vencer() {
-            bombaAtiva = false;
-            clearInterval(timerInterval);
-            document.body.style.backgroundColor = "#004400";
-            timerDisplay.style.color = "#39ff14";
-            timerDisplay.innerText = "SAFE";
-            mensagem.innerText = "BOMBA DESARMADA COM SUCESSO!";
-            mensagem.style.color = "#39ff14";
-            setTimeout(() => location.reload(), 3000);
+    const player = new Ninja();
+    const keys = {};
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    // Eventos de ação única (Pulo e Dash)
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Space') player.jump();
+        if (e.code === 'KeyZ') {
+            let dir = keys['ArrowRight'] ? 1 : (keys['ArrowLeft'] ? -1 : (player.velX >= 0 ? 1 : -1));
+            player.dash(dir);
         }
+    });
 
-        iniciarJogo();
-    </script>
+    function drawFloor() {
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        drawFloor();
+
+        if (keys['ArrowLeft']) player.velX -= player.speed;
+        if (keys['ArrowRight']) player.velX += player.speed;
+
+        player.update();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+
+    // Ajuste de tela
+    window.onresize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
+</script>
 </body>
 </html>
