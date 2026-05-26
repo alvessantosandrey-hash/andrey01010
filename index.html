@@ -1,191 +1,145 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Paintball 3D Arena</title>
+    <title>Desafio do Arremesso 3D-ish</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 20px; height: 20px;
-            border: 2px solid white; border-radius: 50%;
-            transform: translate(-50%, -50%); pointer-events: none;
-        }
-        #ui {
-            position: absolute; bottom: 20px; left: 20px;
-            color: white; text-shadow: 1px 1px 2px black;
-        }
-        #msg {
-            position: absolute; top: 20%; width: 100%; text-align: center;
-            color: white; font-size: 1.2em; pointer-events: none;
-        }
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { background: linear-gradient(#444, #111); border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #ui { position: absolute; top: 20px; text-align: center; pointer-events: none; }
+        .stats { font-size: 24px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="crosshair"></div>
     <div id="ui">
-        <b>WASD</b>: Mover | <b>RATO</b>: Olhar | <b>CLIQUE</b>: Disparar
+        <div class="stats">Pontos: <span id="score">0</span></div>
+        <p>Clique e arraste para trás para mirar | Solte para arremessar</p>
     </div>
-    <div id="msg">Clique no ecrã para começar</div>
+    <canvas id="gameCanvas"></canvas>
 
-    <script type="module">
-        import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
 
-        // --- Configuração Básica ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Céu azul
-        scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
+    canvas.width = 800;
+    canvas.height = 500;
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
+    // Física e Jogo
+    let score = 0;
+    const gravity = 0.5;
+    let isDragging = false;
+    let mouseStart = { x: 0, y: 0 };
+    let mouseCurrent = { x: 0, y: 0 };
 
-        // --- Iluminação ---
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(10, 20, 10);
-        light.castShadow = true;
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
+    const ball = {
+        x: 100, y: 400, radius: 15,
+        vx: 0, vy: 0, 
+        active: false,
+        color: '#e67e22'
+    };
 
-        // --- Chão e Obstáculos ---
-        const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(100, 100),
-            new THREE.MeshStandardMaterial({ color: 0x7cfc00 }) // Relva
-        );
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        scene.add(floor);
+    const hoop = {
+        x: 650, y: 150, width: 80, height: 10
+    };
 
-        const obstacles = [];
-        function createBox(x, z, color) {
-            const box = new THREE.Mesh(
-                new THREE.BoxGeometry(2, 3, 2),
-                new THREE.MeshStandardMaterial({ color: color })
-            );
-            box.position.set(x, 1.5, z);
-            box.castShadow = true;
-            box.receiveShadow = true;
-            scene.add(box);
-            obstacles.push(box);
+    function resetBall() {
+        ball.active = false;
+        ball.x = 100;
+        ball.y = 400;
+        ball.vx = 0;
+        ball.vy = 0;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (!ball.active) {
+            const rect = canvas.getBoundingClientRect();
+            mouseStart.x = e.clientX - rect.left;
+            mouseStart.y = e.clientY - rect.top;
+            isDragging = true;
         }
+    });
 
-        // Criar arena aleatória
-        for(let i=0; i<20; i++) {
-            createBox(Math.random()*40-20, Math.random()*40-20, 0x8b4513);
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            mouseCurrent.x = e.clientX - rect.left;
+            mouseCurrent.y = e.clientY - rect.top;
         }
+    });
 
-        // --- Arma (Marcador) ---
-        const weapon = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05, 0.05, 0.5),
-            new THREE.MeshStandardMaterial({ color: 0x333333 })
-        );
-        weapon.rotation.x = Math.PI / 2;
-        weapon.position.set(0.3, -0.3, -0.5);
-        camera.add(weapon);
-        scene.add(camera);
-
-        // --- Lógica de Disparo ---
-        const balls = [];
-        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-
-        function shoot() {
-            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), 
-                new THREE.MeshStandardMaterial({ color: new THREE.Color(`hsl(${Math.random()*360}, 100%, 50%)`) }));
+    window.addEventListener('mouseup', (e) => {
+        if (isDragging) {
+            const dx = mouseStart.x - mouseCurrent.x;
+            const dy = mouseStart.y - mouseCurrent.y;
             
-            // Posição inicial da bola na ponta da arma
-            ball.position.copy(camera.position);
-            
-            // Direção do disparo baseada na câmara
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            
-            ball.userData.velocity = direction.multiplyScalar(0.6);
-            scene.add(ball);
-            balls.push(ball);
+            // Lançamento (Força proporcional ao arrasto)
+            ball.vx = dx * 0.15;
+            ball.vy = dy * 0.15;
+            ball.active = true;
+            isDragging = false;
         }
+    });
 
-        // --- Controlos de Movimento (Pointer Lock) ---
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        
-        document.addEventListener('mousedown', () => {
-            if (document.pointerLockElement === document.body) {
-                shoot();
-            } else {
-                document.body.requestPointerLock();
-            }
-        });
+    function update() {
+        if (ball.active) {
+            ball.vy += gravity; // Gravidade
+            ball.x += ball.vx;
+            ball.y += ball.vy;
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW') moveForward = true;
-            if (e.code === 'KeyS') moveBackward = true;
-            if (e.code === 'KeyA') moveLeft = true;
-            if (e.code === 'KeyD') moveRight = true;
-        });
-
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW') moveForward = false;
-            if (e.code === 'KeyS') moveBackward = false;
-            if (e.code === 'KeyA') moveLeft = false;
-            if (e.code === 'KeyD') moveRight = false;
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body) {
-                camera.rotation.y -= e.movementX * 0.002;
-                camera.rotation.x -= e.movementY * 0.002;
-                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
-            }
-        });
-
-        // --- Loop Principal ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Movimento do Jogador
-            const speed = 0.1;
-            if (moveForward) camera.translateZ(-speed);
-            if (moveBackward) camera.translateZ(speed);
-            if (moveLeft) camera.translateX(-speed);
-            if (moveRight) camera.translateX(speed);
-            camera.position.y = 1.6; // Altura dos olhos
-
-            // Atualizar bolas de tinta
-            for (let i = balls.length - 1; i >= 0; i--) {
-                const b = balls[i];
-                b.position.add(b.userData.velocity);
-                b.userData.velocity.y -= 0.01; // Gravidade na bola
-
-                // Colisão simples com o chão
-                if (b.position.y <= 0) {
-                    createSplat(b.position, b.material.color);
-                    scene.remove(b);
-                    balls.splice(i, 1);
-                }
+            // Colisão com a cesta (Simplificada)
+            if (ball.x > hoop.x && ball.x < hoop.x + hoop.width &&
+                ball.y > hoop.y && ball.y < hoop.y + hoop.height && ball.vy > 0) {
+                score++;
+                scoreElement.innerText = score;
+                resetBall();
             }
 
-            renderer.render(scene, camera);
+            // Resetar se sair da tela
+            if (ball.y > canvas.height || ball.x > canvas.width) {
+                resetBall();
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Desenhar Cesta
+        ctx.fillStyle = 'red';
+        ctx.fillRect(hoop.x, hoop.y, hoop.width, hoop.height);
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(hoop.x + 5, hoop.y + 10, hoop.width - 10, 60); // Rede
+
+        // Desenhar Trajetória (Linha de mira)
+        if (isDragging) {
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(ball.x, ball.y);
+            ctx.lineTo(ball.x + (mouseStart.x - mouseCurrent.x) * 2, ball.y + (mouseStart.y - mouseCurrent.y) * 2);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
 
-        function createSplat(pos, color) {
-            const splat = new THREE.Mesh(
-                new THREE.CircleGeometry(0.3, 8),
-                new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
-            );
-            splat.position.set(pos.x, 0.01, pos.z);
-            splat.rotation.x = -Math.PI / 2;
-            scene.add(splat);
-        }
+        // Desenhar Bola
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = ball.color;
+        ctx.fill();
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+        ctx.closePath();
+    }
 
-        animate();
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+    loop();
+</script>
 </body>
 </html>
