@@ -2,19 +2,25 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Desafio do Arremesso 3D-ish</title>
+    <title>Pipa Pro: Desafio no Céu</title>
     <style>
-        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        canvas { background: linear-gradient(#444, #111); border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #ui { position: absolute; top: 20px; text-align: center; pointer-events: none; }
-        .stats { font-size: 24px; font-weight: bold; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        canvas { display: block; }
+        #ui {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.5); color: white;
+            padding: 15px; border-radius: 10px; pointer-events: none;
+        }
+        .stats { font-size: 20px; font-weight: bold; color: #ffeb3b; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <div class="stats">Pontos: <span id="score">0</span></div>
-        <p>Clique e arraste para trás para mirar | Solte para arremessar</p>
+        <div class="stats">Cortes: <span id="score">0</span></div>
+        <p>Mova o MOUSE para guiar a pipa<br>
+           SEGURE O CLIQUE para puxar (subir)<br>
+           Cuidado com o vento!</p>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -23,123 +29,186 @@
     const ctx = canvas.getContext('2d');
     const scoreElement = document.getElementById('score');
 
-    canvas.width = 800;
-    canvas.height = 500;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    // Física e Jogo
     let score = 0;
-    const gravity = 0.5;
-    let isDragging = false;
-    let mouseStart = { x: 0, y: 0 };
-    let mouseCurrent = { x: 0, y: 0 };
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    let isPulling = false;
 
-    const ball = {
-        x: 100, y: 400, radius: 15,
-        vx: 0, vy: 0, 
-        active: false,
-        color: '#e67e22'
-    };
-
-    const hoop = {
-        x: 650, y: 150, width: 80, height: 10
-    };
-
-    function resetBall() {
-        ball.active = false;
-        ball.x = 100;
-        ball.y = 400;
-        ball.vx = 0;
-        ball.vy = 0;
-    }
-
-    canvas.addEventListener('mousedown', (e) => {
-        if (!ball.active) {
-            const rect = canvas.getBoundingClientRect();
-            mouseStart.x = e.clientX - rect.left;
-            mouseStart.y = e.clientY - rect.top;
-            isDragging = true;
+    // Configurações de Ambiente
+    const wind = { x: 0.2, y: 0.1 };
+    
+    class Pipa {
+        constructor(x, y, color, isPlayer = false) {
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.size = 30;
+            this.color = color;
+            this.isPlayer = isPlayer;
+            this.lineX = x; // Origem da linha (mão do jogador)
+            this.lineY = canvas.height;
+            this.active = true;
+            this.angle = 0;
         }
-    });
 
-    canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const rect = canvas.getBoundingClientRect();
-            mouseCurrent.x = e.clientX - rect.left;
-            mouseCurrent.y = e.clientY - rect.top;
-        }
-    });
+        draw() {
+            if (!this.active) return;
 
-    window.addEventListener('mouseup', (e) => {
-        if (isDragging) {
-            const dx = mouseStart.x - mouseCurrent.x;
-            const dy = mouseStart.y - mouseCurrent.y;
-            
-            // Lançamento (Força proporcional ao arrasto)
-            ball.vx = dx * 0.15;
-            ball.vy = dy * 0.15;
-            ball.active = true;
-            isDragging = false;
-        }
-    });
-
-    function update() {
-        if (ball.active) {
-            ball.vy += gravity; // Gravidade
-            ball.x += ball.vx;
-            ball.y += ball.vy;
-
-            // Colisão com a cesta (Simplificada)
-            if (ball.x > hoop.x && ball.x < hoop.x + hoop.width &&
-                ball.y > hoop.y && ball.y < hoop.y + hoop.height && ball.vy > 0) {
-                score++;
-                scoreElement.innerText = score;
-                resetBall();
-            }
-
-            // Resetar se sair da tela
-            if (ball.y > canvas.height || ball.x > canvas.width) {
-                resetBall();
-            }
-        }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Desenhar Cesta
-        ctx.fillStyle = 'red';
-        ctx.fillRect(hoop.x, hoop.y, hoop.width, hoop.height);
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(hoop.x + 5, hoop.y + 10, hoop.width - 10, 60); // Rede
-
-        // Desenhar Trajetória (Linha de mira)
-        if (isDragging) {
+            // Desenha a Linha
             ctx.beginPath();
-            ctx.setLineDash([5, 5]);
-            ctx.moveTo(ball.x, ball.y);
-            ctx.lineTo(ball.x + (mouseStart.x - mouseCurrent.x) * 2, ball.y + (mouseStart.y - mouseCurrent.y) * 2);
-            ctx.strokeStyle = 'white';
+            ctx.moveTo(this.isPlayer ? mouseX : this.lineX, canvas.height);
+            ctx.quadraticCurveTo(this.x + 20, (this.y + canvas.height) / 2, this.x, this.y);
+            ctx.strokeStyle = this.isPlayer ? "#fff" : "#ff5555";
+            ctx.lineWidth = 1;
             ctx.stroke();
-            ctx.setLineDash([]);
+
+            // Desenha o corpo da Pipa (Losango)
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -this.size); // Topo
+            ctx.lineTo(this.size * 0.7, 0); // Direita
+            ctx.lineTo(0, this.size); // Baixo
+            ctx.lineTo(-this.size * 0.7, 0); // Esquerda
+            ctx.closePath();
+            
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.strokeStyle = "#000";
+            ctx.stroke();
+            
+            // Rabiola
+            ctx.beginPath();
+            ctx.moveTo(0, this.size);
+            for(let i=1; i<=5; i++) {
+                ctx.lineTo(Math.sin(Date.now()*0.01 + i)*10, this.size + (i*15));
+            }
+            ctx.strokeStyle = "#333";
+            ctx.stroke();
+
+            ctx.restore();
         }
 
-        // Desenhar Bola
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = ball.color;
-        ctx.fill();
-        ctx.strokeStyle = 'black';
-        ctx.stroke();
-        ctx.closePath();
+        update() {
+            if (!this.active) {
+                this.y += 5; // Pipa cortada cai
+                return;
+            }
+
+            if (this.isPlayer) {
+                // Física do Jogador
+                let targetX = mouseX;
+                let targetY = mouseY;
+                
+                // Atração para o mouse
+                let dx = targetX - this.x;
+                let dy = targetY - this.y;
+                
+                this.vx += dx * 0.02;
+                this.vy += dy * 0.02;
+
+                if (isPulling) this.vy -= 0.8; // Puxar linha faz subir
+            } else {
+                // Inteligência Artificial (Movimento errático)
+                this.vx += Math.sin(Date.now() * 0.002) * 0.5;
+                this.vy += Math.cos(Date.now() * 0.003) * 0.3;
+                
+                // IA tenta fugir se o jogador chegar perto
+                let dist = Math.hypot(this.x - player.x, this.y - player.y);
+                if(dist < 100) {
+                    this.vx += (this.x - player.x) * 0.05;
+                }
+            }
+
+            // Resistência do ar e vento
+            this.vx += wind.x;
+            this.vy += wind.y + 0.1; // Gravidade leve
+            
+            this.vx *= 0.92;
+            this.vy *= 0.92;
+
+            this.x += this.vx;
+            this.y += this.vy;
+            
+            this.angle = this.vx * 0.05;
+
+            // Limites da tela
+            if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        }
     }
 
-    function loop() {
-        update();
-        draw();
-        requestAnimationFrame(loop);
+    const player = new Pipa(canvas.width / 2, canvas.height / 2, "#3498db", true);
+    let enemies = [];
+
+    function spawnEnemy() {
+        if (enemies.length < 3) {
+            enemies.push(new Pipa(Math.random() * canvas.width, -50, "#e67e22"));
+        }
     }
 
-    loop();
+    function checkCollision() {
+        enemies.forEach((enemy, index) => {
+            if (!enemy.active) return;
+
+            // Distância entre as pipas
+            let dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+
+            // Regra do Corte: Se o jogador estiver se movendo rápido (ataque) e atingir a inimiga
+            if (dist < 40) {
+                if (Math.abs(player.vx) > 5 || isPulling) {
+                    enemy.active = false;
+                    score++;
+                    scoreElement.innerText = score;
+                    
+                    // Efeito simples de "cortado"
+                    setTimeout(() => {
+                        enemies.splice(index, 1);
+                    }, 2000);
+                }
+            }
+        });
+    }
+
+    function animate() {
+        // Céu dinâmico
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        player.update();
+        player.draw();
+
+        enemies.forEach(enemy => {
+            enemy.update();
+            enemy.draw();
+        });
+
+        checkCollision();
+        if (Math.random() < 0.01) spawnEnemy();
+
+        requestAnimationFrame(animate);
+    }
+
+    // Input Listeners
+    window.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    window.addEventListener('mousedown', () => isPulling = true);
+    window.addEventListener('mouseup', () => isPulling = false);
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    animate();
 </script>
 </body>
 </html>
