@@ -3,32 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Strike: Minimalist Ninja</title>
+    <title>Ninja Shadow: Combat Edition</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #1a1a1a;
-            font-family: 'Courier New', Courier, monospace;
+        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Verdana', sans-serif; }
+        canvas { display: block; }
+        #stats {
+            position: absolute; top: 20px; left: 20px; color: white;
+            text-shadow: 2px 2px #000; pointer-events: none;
         }
-        canvas {
-            display: block;
-            background: linear-gradient(to bottom, #2c3e50, #000000);
-        }
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #ecf0f1;
-            pointer-events: none;
-        }
+        .key-hint { color: #ff3e3e; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h1>SHADOW STRIKE</h1>
-        <p>Setas: Mover | Espaço: Pular | Z: Ataque Dash</p>
+    <div id="stats">
+        <h2 id="scoreText">KILLS: 0</h2>
+        <p>MOVER: <span class="key-hint">SETAS</span> | PULO DUPLO: <span class="key-hint">ESPAÇO (2x)</span></p>
+        <p>ATAQUE/DASH: <span class="key-hint">Z</span> | ESQUIVA: <span class="key-hint">BAIXO</span></p>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -39,130 +30,74 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Configurações de Física
-    const gravity = 0.8;
-    const friction = 0.85;
+    let score = 0;
+    let screenShake = 0;
 
-    class Ninja {
-        constructor() {
+    // Configurações de Física
+    const gravity = 0.9;
+    const friction = 0.82;
+
+    class Entity {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
             this.width = 40;
             this.height = 60;
-            this.x = 100;
-            this.y = canvas.height - 100;
             this.velX = 0;
             this.velY = 0;
-            this.speed = 1.2;
-            this.jumpStrength = -18;
+            this.color = color;
+        }
+    }
+
+    class Ninja extends Entity {
+        constructor() {
+            super(100, canvas.height - 100, "#fff");
             this.grounded = false;
+            this.jumpCount = 0;
             this.isDashing = false;
             this.dashCooldown = 0;
-            this.color = "#ecf0f1";
-        }
-
-        draw() {
-            // Rastro de Dash (Efeito Visual)
-            if (this.isDashing) {
-                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.fillRect(this.x - (this.velX * 2), this.y, this.width, this.height);
-            }
-
-            // Corpo do Ninja
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            
-            // Faixa/Olhos
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(this.x, this.y + 15, this.width, 10);
         }
 
         update() {
-            // Aplica Gravidade
-            if (!this.grounded) {
-                this.velY += gravity;
-            }
-
-            // Aplica Fricção (Desaceleração natural)
+            this.velY += gravity;
             this.velX *= friction;
-
-            // Movimentação
             this.x += this.velX;
             this.y += this.velY;
 
-            // Colisão com o Chão
-            if (this.y + this.height >= canvas.height - 20) {
-                this.y = canvas.height - 20 - this.height;
+            // Chão
+            if (this.y + this.height > canvas.height - 50) {
+                this.y = canvas.height - 50 - this.height;
                 this.velY = 0;
                 this.grounded = true;
-            } else {
-                this.grounded = false;
+                this.jumpCount = 0;
             }
 
-            // Limites da Tela
-            if (this.x < 0) this.x = 0;
-            if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
-
             if (this.dashCooldown > 0) this.dashCooldown--;
-            if (Math.abs(this.velX) < 5) this.isDashing = false;
+            if (Math.abs(this.velX) < 8) this.isDashing = false;
 
             this.draw();
         }
 
-        jump() {
-            if (this.grounded) {
-                this.velY = this.jumpStrength;
-                this.grounded = false;
+        draw() {
+            ctx.save();
+            // Efeito de movimento brusco (fantasma)
+            if (this.isDashing) {
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = "#00f2ff";
+                ctx.fillRect(this.x - (this.velX * 1.5), this.y, this.width, this.height);
             }
-        }
-
-        dash(direction) {
-            if (this.dashCooldown === 0) {
-                this.isDashing = true;
-                this.velX = direction * 40;
-                this.dashCooldown = 30;
-            }
+            
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            // Máscara
+            ctx.fillStyle = "#333";
+            ctx.fillRect(this.x, this.y + 12, this.width, 12);
+            ctx.restore();
         }
     }
 
-    const player = new Ninja();
-    const keys = {};
-
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
-
-    // Eventos de ação única (Pulo e Dash)
-    window.addEventListener('keydown', e => {
-        if (e.code === 'Space') player.jump();
-        if (e.code === 'KeyZ') {
-            let dir = keys['ArrowRight'] ? 1 : (keys['ArrowLeft'] ? -1 : (player.velX >= 0 ? 1 : -1));
-            player.dash(dir);
-        }
-    });
-
-    function drawFloor() {
-        ctx.fillStyle = "#2c3e50";
-        ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
-    }
-
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        drawFloor();
-
-        if (keys['ArrowLeft']) player.velX -= player.speed;
-        if (keys['ArrowRight']) player.velX += player.speed;
-
-        player.update();
-
-        requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-
-    // Ajuste de tela
-    window.onresize = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    };
-</script>
-</body>
-</html>
+    class Enemy extends Entity {
+        constructor() {
+            super(canvas.width + 100, canvas.height - 110, "#ff3e3e");
+            this.speed = Math
