@@ -101,3 +101,141 @@
         constructor() {
             super(canvas.width + 100, canvas.height - 110, "#ff3e3e");
             this.speed = Math
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Shadow Strike 3D</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>SHADOW 3D</h1>
+        <p>Setas: Mover | Espaço: Pular | Z: Dash</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+        // --- Configuração da Cena ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.Fog(0x050505, 1, 50);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // --- Iluminação (O segredo do realismo) ---
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 500);
+        spotLight.position.set(0, 20, 10);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // --- Chão (Dojo) ---
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // --- O Ninja (Modelo 3D Estilizado) ---
+        const ninjaGroup = new THREE.Group();
+        
+        // Corpo
+        const bodyGeo = new THREE.BoxGeometry(1, 1.8, 0.6);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.castShadow = true;
+        ninjaGroup.add(body);
+
+        // Faixa (Olhos)
+        const bandGeo = new THREE.BoxGeometry(1.05, 0.2, 0.65);
+        const bandMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const band = new THREE.Mesh(bandGeo, bandMat);
+        band.position.y = 0.5;
+        ninjaGroup.add(band);
+
+        scene.add(ninjaGroup);
+        ninjaGroup.position.y = 0.9;
+
+        // --- Física e Movimento ---
+        let velX = 0, velY = 0;
+        const gravity = -0.015;
+        const friction = 0.9;
+        const speed = 0.02;
+        let isGrounded = true;
+        const keys = {};
+
+        camera.position.set(0, 5, 12);
+        camera.lookAt(ninjaGroup.position);
+
+        // Controles
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        window.addEventListener('keydown', e => {
+            if(e.code === 'Space' && isGrounded) {
+                velY = 0.4;
+                isGrounded = false;
+            }
+            if(e.code === 'KeyZ') {
+                const dir = keys['ArrowRight'] ? 1 : (keys['ArrowLeft'] ? -1 : 0);
+                velX += dir * 1.5; // Dash boost
+            }
+        });
+
+        // --- Loop de Animação ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Lógica de Movimento
+            if (keys['ArrowLeft']) velX -= speed;
+            if (keys['ArrowRight']) velX += speed;
+
+            velX *= friction;
+            ninjaGroup.position.x += velX;
+
+            // Gravidade e Pulo
+            velY += gravity;
+            ninjaGroup.position.y += velY;
+
+            if (ninjaGroup.position.y <= 0.9) {
+                ninjaGroup.position.y = 0.9;
+                velY = 0;
+                isGrounded = true;
+            }
+
+            // Movimento suave da câmera acompanhando o ninja
+            camera.position.x += (ninjaGroup.position.x - camera.position.x) * 0.05;
+            spotLight.position.x = ninjaGroup.position.x;
+            spotLight.target = ninjaGroup;
+
+            // Inclinação realista ao correr
+            ninjaGroup.rotation.z = -velX * 0.5;
+            ninjaGroup.rotation.y = THREE.MathUtils.lerp(ninjaGroup.rotation.y, velX > 0 ? 0.5 : -0.5, 0.1);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Ajuste de Janela
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
