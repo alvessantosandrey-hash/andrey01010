@@ -2,6 +2,175 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pipa Survival: Batalha na Favela</title>
+    <title>Pipa Pro: Battle Royale Urbano</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: '
+        body { margin: 0; overflow: hidden; background: #57a0d3; font-family: 'Courier New', Courier, monospace; }
+        #game-ui {
+            position: absolute; top: 20px; left: 20px;
+            color: white; background: rgba(0,0,0,0.7);
+            padding: 15px; border-radius: 8px; pointer-events: none;
+            border: 2px solid #ff4444;
+        }
+        .danger { color: #ff4444; font-weight: bold; animation: blink 0.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="game-ui">
+        <div style="font-size: 24px;">VIDA DA PIPA: <span id="health">100</span>%</div>
+        <div>INIMIGOS DERROTADOS: <span id="score">0</span></div>
+        <p>MOUSE: Controlar Pipa | CLIQUE: Puxar/Subir</p>
+        <div id="warn" class="danger">CUIDADO COM OS ESTILINGUES!</div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let health = 100;
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    let isPulling = false;
+
+    // Classe da Pipa do Jogador
+    class PlayerPipa {
+        constructor() {
+            this.x = canvas.width / 2;
+            this.y = canvas.height / 2;
+            this.vx = 0; this.vy = 0;
+            this.size = 25;
+        }
+        update() {
+            let dx = mouseX - this.x;
+            let dy = mouseY - this.y;
+            this.vx += dx * 0.015;
+            this.vy += dy * 0.015;
+            if (isPulling) this.vy -= 0.7;
+            this.vx *= 0.93; this.vy *= 0.93;
+            this.vy += 0.15; // Gravidade
+            this.x += this.vx; this.y += this.vy;
+        }
+        draw() {
+            ctx.strokeStyle = "#fff";
+            ctx.beginPath(); ctx.moveTo(mouseX, canvas.height);
+            ctx.lineTo(this.x, this.y); ctx.stroke();
+            
+            ctx.fillStyle = "#3498db";
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y - this.size);
+            ctx.lineTo(this.x + this.size, this.y);
+            ctx.lineTo(this.x, this.y + this.size);
+            ctx.lineTo(this.x - this.size, this.y);
+            ctx.fill();
+        }
+    }
+
+    // Classe dos Inimigos (Atiradores no chão)
+    class EnemyShooter {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height - 50;
+            this.reload = 100 + Math.random() * 100;
+            this.active = true;
+        }
+        update() {
+            this.reload--;
+            if (this.reload <= 0 && this.active) {
+                projectiles.push(new Projectile(this.x, this.y));
+                this.reload = 120 + Math.random() * 100;
+            }
+        }
+        draw() {
+            ctx.fillStyle = this.active ? "#e74c3c" : "#333";
+            // Desenha "pessoa"
+            ctx.fillRect(this.x - 10, this.y, 20, 40);
+            ctx.fillStyle = "#ffccaa";
+            ctx.beginPath(); ctx.arc(this.x, this.y - 10, 8, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    // Classe do Projétil (Pedra do estilingue)
+    class Projectile {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            let dx = player.x - x;
+            let dy = player.y - y;
+            let angle = Math.atan2(dy, dx);
+            this.speed = 7;
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+        }
+        draw() {
+            ctx.fillStyle = "#fff";
+            ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    const player = new PlayerPipa();
+    const shooters = [];
+    const projectiles = [];
+
+    function spawnShooter() {
+        if (shooters.length < 5) shooters.push(new EnemyShooter());
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Desenha o chão/rua
+        ctx.fillStyle = "#555";
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+        player.update();
+        player.draw();
+
+        shooters.forEach((s, sIdx) => {
+            s.update();
+            s.draw();
+            // Cortar inimigo: se a pipa passar por cima dele rápido
+            let dist = Math.hypot(player.x - s.x, player.y - s.y);
+            if (dist < 40 && s.active) {
+                s.active = false;
+                score += 10;
+                document.getElementById('score').innerText = score;
+                setTimeout(() => shooters.splice(sIdx, 1), 1000);
+            }
+        });
+
+        projectiles.forEach((p, pIdx) => {
+            p.update();
+            p.draw();
+            // Colisão com a pipa
+            let dist = Math.hypot(p.x - player.x, p.y - player.y);
+            if (dist < 20) {
+                health -= 10;
+                projectiles.splice(pIdx, 1);
+                document.getElementById('health').innerText = health;
+                if (health <= 0) {
+                    alert("Sua pipa foi derrubada! Score: " + score);
+                    location.reload();
+                }
+            }
+        });
+
+        if (Math.random() < 0.02) spawnShooter();
+        requestAnimationFrame(gameLoop);
+    }
+
+    window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+    window.addEventListener('mousedown', () => isPulling = true);
+    window.addEventListener('mouseup', () => isPulling = false);
+
+    gameLoop();
+</script>
+</body>
+</html>
