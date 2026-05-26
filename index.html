@@ -1,1 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Paintball Arena - Player vs Inimigos</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      width: 20px; height: 20px;
+      border: 2px solid white; border-radius: 50%;
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
+    #ui {
+      position: absolute; bottom: 20px; left: 20px;
+      color: white; text-shadow: 1px 1px 2px black;
+    }
+  </style>
+</head>
+<body>
+  <div id="crosshair"></div>
+  <div id="ui"><b>WASD</b>: mover | <b>Rato</b>: olhar | <b>Click</b>: disparar</div>
 
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+    import { PointerLockControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/PointerLockControls.js';
+
+    let scene, camera, renderer, controls;
+    const balls = [];
+    const enemyBalls = [];
+    const enemies = [];
+    const clock = new THREE.Clock();
+
+    init();
+    animate();
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87ceeb);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Luz
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+
+      // Chão
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(100, 100),
+        new THREE.MeshStandardMaterial({ color: 0x228b22 })
+      );
+      floor.rotation.x = -Math.PI/2;
+      scene.add(floor);
+
+      // Controlo
+      controls = new PointerLockControls(camera, document.body);
+      document.body.addEventListener('click', () => controls.lock());
+
+      // Inimigos
+      for (let i=0; i<3; i++) {
+        createEnemy(Math.random()*30-15, Math.random()*30-15);
+      }
+
+      // Disparo do jogador
+      document.addEventListener('mousedown', () => {
+        if (controls.isLocked) shootPlayer();
+      });
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function createEnemy(x,z) {
+      const enemy = new THREE.Mesh(
+        new THREE.BoxGeometry(1,2,1),
+        new THREE.MeshStandardMaterial({ color: 0xff0000 })
+      );
+      enemy.position.set(x,1,z);
+      scene.add(enemy);
+      enemy.userData.cooldown = 0;
+      enemies.push(enemy);
+    }
+
+    function shootPlayer() {
+      const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1,12,12),
+        new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+      );
+      ball.position.copy(camera.position);
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      ball.userData.velocity = dir.multiplyScalar(20);
+      scene.add(ball);
+      balls.push(ball);
+    }
+
+    function shootEnemy(enemy) {
+      const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1,12,12),
+        new THREE.MeshStandardMaterial({ color: 0x0000ff })
+      );
+      ball.position.copy(enemy.position);
+      const dir = new THREE.Vector3().subVectors(camera.position, enemy.position).normalize();
+      ball.userData.velocity = dir.multiplyScalar(10);
+      scene.add(ball);
+      enemyBalls.push(ball);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      // Atualizar bolas do jogador
+      balls.forEach((b,i)=>{
+        b.position.addScaledVector(b.userData.velocity, delta);
+        if (b.position.y<0) { scene.remove(b); balls.splice(i,1); }
+      });
+
+      // Atualizar bolas dos inimigos
+      enemyBalls.forEach((b,i)=>{
+        b.position.addScaledVector(b.userData.velocity, delta);
+        if (b.position.distanceTo(camera.position)<1.0) {
+          alert("Foste atingido!");
+          scene.remove(b);
+          enemyBalls.splice(i,1);
+        }
+      });
+
+      // Inimigos disparam periodicamente
+      enemies.forEach(enemy=>{
+        enemy.userData.cooldown -= delta;
+        if (enemy.userData.cooldown<=0) {
+          shootEnemy(enemy);
+          enemy.userData.cooldown = 2 + Math.random()*2; // intervalo
+        }
+      });
+
+      renderer.render(scene,camera);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  </script>
+</body>
+</html>
