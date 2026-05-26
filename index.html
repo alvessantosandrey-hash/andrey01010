@@ -1,130 +1,41 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ninja Shadow: Combat Edition</title>
+    <title>Paintball 3D Arena</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Verdana', sans-serif; }
-        canvas { display: block; }
-        #stats {
-            position: absolute; top: 20px; left: 20px; color: white;
-            text-shadow: 2px 2px #000; pointer-events: none;
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            border: 2px solid white; border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
         }
-        .key-hint { color: #ff3e3e; font-weight: bold; }
+        #ui {
+            position: absolute; bottom: 20px; left: 20px;
+            color: white; text-shadow: 1px 1px 2px black;
+        }
+        #msg {
+            position: absolute; top: 20%; width: 100%; text-align: center;
+            color: white; font-size: 1.2em; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <div id="stats">
-        <h2 id="scoreText">KILLS: 0</h2>
-        <p>MOVER: <span class="key-hint">SETAS</span> | PULO DUPLO: <span class="key-hint">ESPAÇO (2x)</span></p>
-        <p>ATAQUE/DASH: <span class="key-hint">Z</span> | ESQUIVA: <span class="key-hint">BAIXO</span></p>
-    </div>
-    <canvas id="gameCanvas"></canvas>
-
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    let score = 0;
-    let screenShake = 0;
-
-    // Configurações de Física
-    const gravity = 0.9;
-    const friction = 0.82;
-
-    class Entity {
-        constructor(x, y, color) {
-            this.x = x;
-            this.y = y;
-            this.width = 40;
-            this.height = 60;
-            this.velX = 0;
-            this.velY = 0;
-            this.color = color;
-        }
-    }
-
-    class Ninja extends Entity {
-        constructor() {
-            super(100, canvas.height - 100, "#fff");
-            this.grounded = false;
-            this.jumpCount = 0;
-            this.isDashing = false;
-            this.dashCooldown = 0;
-        }
-
-        update() {
-            this.velY += gravity;
-            this.velX *= friction;
-            this.x += this.velX;
-            this.y += this.velY;
-
-            // Chão
-            if (this.y + this.height > canvas.height - 50) {
-                this.y = canvas.height - 50 - this.height;
-                this.velY = 0;
-                this.grounded = true;
-                this.jumpCount = 0;
-            }
-
-            if (this.dashCooldown > 0) this.dashCooldown--;
-            if (Math.abs(this.velX) < 8) this.isDashing = false;
-
-            this.draw();
-        }
-
-        draw() {
-            ctx.save();
-            // Efeito de movimento brusco (fantasma)
-            if (this.isDashing) {
-                ctx.globalAlpha = 0.4;
-                ctx.fillStyle = "#00f2ff";
-                ctx.fillRect(this.x - (this.velX * 1.5), this.y, this.width, this.height);
-            }
-            
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            // Máscara
-            ctx.fillStyle = "#333";
-            ctx.fillRect(this.x, this.y + 12, this.width, 12);
-            ctx.restore();
-        }
-    }
-
-    class Enemy extends Entity {
-        constructor() {
-            super(canvas.width + 100, canvas.height - 110, "#ff3e3e");
-            this.speed = Math
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Shadow Strike 3D</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; }
-    </style>
-</head>
-<body>
-
+    <div id="crosshair"></div>
     <div id="ui">
-        <h1>SHADOW 3D</h1>
-        <p>Setas: Mover | Espaço: Pular | Z: Dash</p>
+        <b>WASD</b>: Mover | <b>RATO</b>: Olhar | <b>CLIQUE</b>: Disparar
     </div>
+    <div id="msg">Clique no ecrã para começar</div>
 
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
 
-        // --- Configuração da Cena ---
+        // --- Configuração Básica ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        scene.fog = new THREE.Fog(0x050505, 1, 50);
+        scene.background = new THREE.Color(0x87ceeb); // Céu azul
+        scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -132,105 +43,144 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // --- Iluminação (O segredo do realismo) ---
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-        scene.add(ambientLight);
+        // --- Iluminação ---
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 20, 10);
+        light.castShadow = true;
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
 
-        const spotLight = new THREE.SpotLight(0xffffff, 500);
-        spotLight.position.set(0, 20, 10);
-        spotLight.castShadow = true;
-        scene.add(spotLight);
-
-        // --- Chão (Dojo) ---
-        const floorGeo = new THREE.PlaneGeometry(200, 200);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        // --- Chão e Obstáculos ---
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.MeshStandardMaterial({ color: 0x7cfc00 }) // Relva
+        );
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        // --- O Ninja (Modelo 3D Estilizado) ---
-        const ninjaGroup = new THREE.Group();
+        const obstacles = [];
+        function createBox(x, z, color) {
+            const box = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 3, 2),
+                new THREE.MeshStandardMaterial({ color: color })
+            );
+            box.position.set(x, 1.5, z);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            scene.add(box);
+            obstacles.push(box);
+        }
+
+        // Criar arena aleatória
+        for(let i=0; i<20; i++) {
+            createBox(Math.random()*40-20, Math.random()*40-20, 0x8b4513);
+        }
+
+        // --- Arma (Marcador) ---
+        const weapon = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.05, 0.05, 0.5),
+            new THREE.MeshStandardMaterial({ color: 0x333333 })
+        );
+        weapon.rotation.x = Math.PI / 2;
+        weapon.position.set(0.3, -0.3, -0.5);
+        camera.add(weapon);
+        scene.add(camera);
+
+        // --- Lógica de Disparo ---
+        const balls = [];
+        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+        function shoot() {
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), 
+                new THREE.MeshStandardMaterial({ color: new THREE.Color(`hsl(${Math.random()*360}, 100%, 50%)`) }));
+            
+            // Posição inicial da bola na ponta da arma
+            ball.position.copy(camera.position);
+            
+            // Direção do disparo baseada na câmara
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            
+            ball.userData.velocity = direction.multiplyScalar(0.6);
+            scene.add(ball);
+            balls.push(ball);
+        }
+
+        // --- Controlos de Movimento (Pointer Lock) ---
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         
-        // Corpo
-        const bodyGeo = new THREE.BoxGeometry(1, 1.8, 0.6);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.castShadow = true;
-        ninjaGroup.add(body);
-
-        // Faixa (Olhos)
-        const bandGeo = new THREE.BoxGeometry(1.05, 0.2, 0.65);
-        const bandMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const band = new THREE.Mesh(bandGeo, bandMat);
-        band.position.y = 0.5;
-        ninjaGroup.add(band);
-
-        scene.add(ninjaGroup);
-        ninjaGroup.position.y = 0.9;
-
-        // --- Física e Movimento ---
-        let velX = 0, velY = 0;
-        const gravity = -0.015;
-        const friction = 0.9;
-        const speed = 0.02;
-        let isGrounded = true;
-        const keys = {};
-
-        camera.position.set(0, 5, 12);
-        camera.lookAt(ninjaGroup.position);
-
-        // Controles
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
-
-        window.addEventListener('keydown', e => {
-            if(e.code === 'Space' && isGrounded) {
-                velY = 0.4;
-                isGrounded = false;
-            }
-            if(e.code === 'KeyZ') {
-                const dir = keys['ArrowRight'] ? 1 : (keys['ArrowLeft'] ? -1 : 0);
-                velX += dir * 1.5; // Dash boost
+        document.addEventListener('mousedown', () => {
+            if (document.pointerLockElement === document.body) {
+                shoot();
+            } else {
+                document.body.requestPointerLock();
             }
         });
 
-        // --- Loop de Animação ---
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW') moveForward = true;
+            if (e.code === 'KeyS') moveBackward = true;
+            if (e.code === 'KeyA') moveLeft = true;
+            if (e.code === 'KeyD') moveRight = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW') moveForward = false;
+            if (e.code === 'KeyS') moveBackward = false;
+            if (e.code === 'KeyA') moveLeft = false;
+            if (e.code === 'KeyD') moveRight = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body) {
+                camera.rotation.y -= e.movementX * 0.002;
+                camera.rotation.x -= e.movementY * 0.002;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+            }
+        });
+
+        // --- Loop Principal ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // Lógica de Movimento
-            if (keys['ArrowLeft']) velX -= speed;
-            if (keys['ArrowRight']) velX += speed;
+            // Movimento do Jogador
+            const speed = 0.1;
+            if (moveForward) camera.translateZ(-speed);
+            if (moveBackward) camera.translateZ(speed);
+            if (moveLeft) camera.translateX(-speed);
+            if (moveRight) camera.translateX(speed);
+            camera.position.y = 1.6; // Altura dos olhos
 
-            velX *= friction;
-            ninjaGroup.position.x += velX;
+            // Atualizar bolas de tinta
+            for (let i = balls.length - 1; i >= 0; i--) {
+                const b = balls[i];
+                b.position.add(b.userData.velocity);
+                b.userData.velocity.y -= 0.01; // Gravidade na bola
 
-            // Gravidade e Pulo
-            velY += gravity;
-            ninjaGroup.position.y += velY;
-
-            if (ninjaGroup.position.y <= 0.9) {
-                ninjaGroup.position.y = 0.9;
-                velY = 0;
-                isGrounded = true;
+                // Colisão simples com o chão
+                if (b.position.y <= 0) {
+                    createSplat(b.position, b.material.color);
+                    scene.remove(b);
+                    balls.splice(i, 1);
+                }
             }
-
-            // Movimento suave da câmera acompanhando o ninja
-            camera.position.x += (ninjaGroup.position.x - camera.position.x) * 0.05;
-            spotLight.position.x = ninjaGroup.position.x;
-            spotLight.target = ninjaGroup;
-
-            // Inclinação realista ao correr
-            ninjaGroup.rotation.z = -velX * 0.5;
-            ninjaGroup.rotation.y = THREE.MathUtils.lerp(ninjaGroup.rotation.y, velX > 0 ? 0.5 : -0.5, 0.1);
 
             renderer.render(scene, camera);
         }
 
+        function createSplat(pos, color) {
+            const splat = new THREE.Mesh(
+                new THREE.CircleGeometry(0.3, 8),
+                new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
+            );
+            splat.position.set(pos.x, 0.01, pos.z);
+            splat.rotation.x = -Math.PI / 2;
+            scene.add(splat);
+        }
+
         animate();
 
-        // Ajuste de Janela
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
