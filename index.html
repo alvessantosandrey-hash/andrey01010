@@ -1,102 +1,92 @@
-<script type="module">
-import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-import { PointerLockControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/PointerLockControls.js';
+// --- Inimigos ---
+const enemies = [];
 
-let camera, scene, renderer, controls;
-const balls = [];
-const obstacles = [];
-const clock = new THREE.Clock();
-
-init();
-animate();
-
-function init() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
-    scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
-
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.body.appendChild(renderer.domElement);
-
-    // Luz
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 20, 10);
-    light.castShadow = true;
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x606060));
-
-    // Chão
-    const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshPhysicalMaterial({ color: 0x228b22 })
+function createEnemy(x, z) {
+    const enemy = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 2, 1),
+        new THREE.MeshStandardMaterial({ color: 0x0000ff })
     );
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
+    enemy.position.set(x, 1, z);
+    enemy.castShadow = true;
+    scene.add(enemy);
 
-    // Obstáculos
-    for (let i = 0; i < 20; i++) {
-        const box = new THREE.Mesh(
-            new THREE.BoxGeometry(2, 3, 2),
-            new THREE.MeshPhysicalMaterial({ color: 0x8b4513 })
-        );
-        box.position.set(Math.random() * 40 - 20, 1.5, Math.random() * 40 - 20);
-        box.castShadow = true;
-        scene.add(box);
-        obstacles.push(box);
-    }
+    // Movimento aleatório
+    enemy.userData.direction = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.05,
+        0,
+        (Math.random() - 0.5) * 0.05
+    );
 
-    // Controlo de movimento
-    controls = new PointerLockControls(camera, document.body);
-    document.body.addEventListener('click', () => controls.lock());
+    enemies.push(enemy);
+}
 
-    // Disparo
-    document.addEventListener('mousedown', () => {
-        if (controls.isLocked) shoot();
+// Criar alguns inimigos
+for (let i = 0; i < 5; i++) {
+    createEnemy(Math.random() * 30 - 15, Math.random() * 30 - 15);
+}
+
+// --- Atualizar inimigos ---
+function updateEnemies() {
+    enemies.forEach((enemy) => {
+        enemy.position.add(enemy.userData.direction);
+
+        // Limites da arena
+        if (Math.abs(enemy.position.x) > 40 || Math.abs(enemy.position.z) > 40) {
+            enemy.userData.direction.negate();
+        }
     });
-
-    window.addEventListener('resize', onWindowResize);
 }
 
-function shoot() {
-    const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 12, 12),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color(`hsl(${Math.random()*360}, 100%, 50%)`) })
-    );
-    ball.position.copy(camera.position);
+// --- Colisão bolas com inimigos ---
+function checkCollisions() {
+    for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        enemies.forEach((enemy, j) => {
+            const dist = b.position.distanceTo(enemy.position);
+            if (dist < 1) {
+                // Inimigo atingido
+                scene.remove(enemy);
+                enemies.splice(j, 1);
 
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    ball.userData.velocity = dir.multiplyScalar(10);
+                // Mancha de tinta no chão
+                createSplat(enemy.position, b.material.color);
 
-    scene.add(ball);
-    balls.push(ball);
+                // Remover bola
+                scene.remove(b);
+                balls.splice(i, 1);
+            }
+        });
+    }
 }
 
+// --- Loop Principal ---
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
+    // Movimento jogador
+    const speed = 5 * delta;
+    if (moveForward) camera.translateZ(-speed);
+    if (moveBackward) camera.translateZ(speed);
+    if (moveLeft) camera.translateX(-speed);
+    if (moveRight) camera.translateX(speed);
+    camera.position.y = 1.6;
+
+    // Atualizar bolas
     balls.forEach((b, i) => {
         b.position.addScaledVector(b.userData.velocity, delta);
-        b.userData.velocity.y -= 9.8 * delta; // gravidade
+        b.userData.velocity.y -= 9.8 * delta;
 
         if (b.position.y <= 0) {
+            createSplat(b.position, b.material.color);
             scene.remove(b);
             balls.splice(i, 1);
         }
     });
 
+    // Atualizar inimigos e colisões
+    updateEnemies();
+    checkCollisions();
+
     renderer.render(scene, camera);
 }
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-</script>
