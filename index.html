@@ -1,150 +1,110 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Paintball Arena - Player vs Inimigos</title>
-  <style>
-    body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-    #crosshair {
-      position: absolute; top: 50%; left: 50%;
-      width: 20px; height: 20px;
-      border: 2px solid white; border-radius: 50%;
-      transform: translate(-50%, -50%); pointer-events: none;
-    }
-    #ui {
-      position: absolute; bottom: 20px; left: 20px;
-      color: white; text-shadow: 1px 1px 2px black;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Paintball JS Edition</title>
+    <style>
+        body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; color: white; font-family: sans-serif; }
+        canvas { background: #fff; border: 5px solid #555; cursor: crosshair; }
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; }
+    </style>
 </head>
 <body>
-  <div id="crosshair"></div>
-  <div id="ui"><b>WASD</b>: mover | <b>Rato</b>: olhar | <b>Click</b>: disparar</div>
 
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-    import { PointerLockControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/PointerLockControls.js';
+    <div id="ui">
+        <h1>Paintball Multiplayer</h1>
+        <p>Use **WASD** para mover | **Clique** para atirar</p>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 
-    let scene, camera, renderer, controls;
-    const balls = [];
-    const enemyBalls = [];
-    const enemies = [];
-    const clock = new THREE.Clock();
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    init();
-    animate();
+    canvas.width = 800;
+    canvas.height = 600;
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x87ceeb);
+    // Configurações do Jogador
+    const player = {
+        x: 400,
+        y: 300,
+        radius: 15,
+        color: 'blue',
+        speed: 4
+    };
 
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const projectiles = [];
+    const keys = {};
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+    // Detectar teclas
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-      // Luz
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
+    // Atirar
+    window.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-      // Chão
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshStandardMaterial({ color: 0x228b22 })
-      );
-      floor.rotation.x = -Math.PI/2;
-      scene.add(floor);
+        // Calcular ângulo do tiro
+        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+        
+        projectiles.push({
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(angle) * 7,
+            vy: Math.sin(angle) * 7,
+            color: player.color
+        });
+    });
 
-      // Controlo
-      controls = new PointerLockControls(camera, document.body);
-      document.body.addEventListener('click', () => controls.lock());
+    function update() {
+        // Movimentação
+        if (keys['w'] && player.y > player.radius) player.y -= player.speed;
+        if (keys['s'] && player.y < canvas.height - player.radius) player.y += player.speed;
+        if (keys['a'] && player.x > player.radius) player.x -= player.speed;
+        if (keys['d'] && player.x < canvas.width - player.radius) player.x += player.speed;
 
-      // Inimigos
-      for (let i=0; i<3; i++) {
-        createEnemy(Math.random()*30-15, Math.random()*30-15);
-      }
+        // Atualizar projéteis
+        projectiles.forEach((p, index) => {
+            p.x += p.vx;
+            p.y += p.vy;
 
-      // Disparo do jogador
-      document.addEventListener('mousedown', () => {
-        if (controls.isLocked) shootPlayer();
-      });
-
-      window.addEventListener('resize', onWindowResize);
+            // Remover se sair da tela
+            if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                projectiles.splice(index, 1);
+            }
+        });
     }
 
-    function createEnemy(x,z) {
-      const enemy = new THREE.Mesh(
-        new THREE.BoxGeometry(1,2,1),
-        new THREE.MeshStandardMaterial({ color: 0xff0000 })
-      );
-      enemy.position.set(x,1,z);
-      scene.add(enemy);
-      enemy.userData.cooldown = 0;
-      enemies.push(enemy);
+    function draw() {
+        // Limpar rastro (para efeito de paintball, você pode não limpar tudo!)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Desenhar Jogador
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.fill();
+        ctx.closePath();
+
+        // Desenhar Tiros
+        projectiles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.closePath();
+        });
+
+        requestAnimationFrame(() => {
+            update();
+            draw();
+        });
     }
 
-    function shootPlayer() {
-      const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1,12,12),
-        new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-      );
-      ball.position.copy(camera.position);
-      const dir = new THREE.Vector3();
-      camera.getWorldDirection(dir);
-      ball.userData.velocity = dir.multiplyScalar(20);
-      scene.add(ball);
-      balls.push(ball);
-    }
-
-    function shootEnemy(enemy) {
-      const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1,12,12),
-        new THREE.MeshStandardMaterial({ color: 0x0000ff })
-      );
-      ball.position.copy(enemy.position);
-      const dir = new THREE.Vector3().subVectors(camera.position, enemy.position).normalize();
-      ball.userData.velocity = dir.multiplyScalar(10);
-      scene.add(ball);
-      enemyBalls.push(ball);
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-
-      // Atualizar bolas do jogador
-      balls.forEach((b,i)=>{
-        b.position.addScaledVector(b.userData.velocity, delta);
-        if (b.position.y<0) { scene.remove(b); balls.splice(i,1); }
-      });
-
-      // Atualizar bolas dos inimigos
-      enemyBalls.forEach((b,i)=>{
-        b.position.addScaledVector(b.userData.velocity, delta);
-        if (b.position.distanceTo(camera.position)<1.0) {
-          alert("Foste atingido!");
-          scene.remove(b);
-          enemyBalls.splice(i,1);
-        }
-      });
-
-      // Inimigos disparam periodicamente
-      enemies.forEach(enemy=>{
-        enemy.userData.cooldown -= delta;
-        if (enemy.userData.cooldown<=0) {
-          shootEnemy(enemy);
-          enemy.userData.cooldown = 2 + Math.random()*2; // intervalo
-        }
-      });
-
-      renderer.render(scene,camera);
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-  </script>
+    draw();
+</script>
 </body>
 </html>
