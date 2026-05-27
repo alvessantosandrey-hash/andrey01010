@@ -2,18 +2,20 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Paintball JS Edition</title>
+    <title>Paintball 2 Players - Local</title>
     <style>
-        body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; color: white; font-family: sans-serif; }
-        canvas { background: #fff; border: 5px solid #555; cursor: crosshair; }
-        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; }
+        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { background: #fff; border: 4px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .stats { display: flex; gap: 50px; margin-bottom: 10px; }
+        .p1 { color: #3498db; }
+        .p2 { color: #e74c3c; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h1>Paintball Multiplayer</h1>
-        <p>Use **WASD** para mover | **Clique** para atirar</p>
+    <div class="stats">
+        <h2 class="p1">P1: WASD + Espaço</h2>
+        <h2 class="p2">P2: Setas + Enter</h2>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -22,53 +24,68 @@
     const ctx = canvas.getContext('2d');
 
     canvas.width = 800;
-    canvas.height = 600;
+    canvas.height = 500;
 
-    // Configurações do Jogador
-    const player = {
-        x: 400,
-        y: 300,
-        radius: 15,
-        color: 'blue',
-        speed: 4
+    const players = {
+        p1: { x: 100, y: 250, color: '#3498db', radius: 15, score: 0 },
+        p2: { x: 700, y: 250, color: '#e74c3c', radius: 15, score: 0 }
     };
 
-    const projectiles = [];
+    let projectiles = [];
     const keys = {};
 
-    // Detectar teclas
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-    // Atirar
-    window.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        // Calcular ângulo do tiro
-        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-        
+    function shoot(player, targetX, targetY) {
+        const angle = Math.atan2(targetY - player.y, targetX - player.x);
         projectiles.push({
             x: player.x,
             y: player.y,
-            vx: Math.cos(angle) * 7,
-            vy: Math.sin(angle) * 7,
-            color: player.color
+            vx: Math.cos(angle) * 8,
+            vy: Math.sin(angle) * 8,
+            color: player.color,
+            owner: player
         });
-    });
+    }
 
     function update() {
-        // Movimentação
-        if (keys['w'] && player.y > player.radius) player.y -= player.speed;
-        if (keys['s'] && player.y < canvas.height - player.radius) player.y += player.speed;
-        if (keys['a'] && player.x > player.radius) player.x -= player.speed;
-        if (keys['d'] && player.x < canvas.width - player.radius) player.x += player.speed;
+        // Movimento Player 1 (WASD)
+        if (keys['KeyW'] && players.p1.y > 15) players.p1.y -= 5;
+        if (keys['KeyS'] && players.p1.y < canvas.height - 15) players.p1.y += 5;
+        if (keys['KeyA'] && players.p1.x > 15) players.p1.x -= 5;
+        if (keys['KeyD'] && players.p1.x < canvas.width - 15) players.p1.x += 5;
+        if (keys['Space']) { shoot(players.p1, players.p2.x, players.p2.y); keys['Space'] = false; }
 
-        // Atualizar projéteis
+        // Movimento Player 2 (Setas)
+        if (keys['ArrowUp'] && players.p2.y > 15) players.p2.y -= 5;
+        if (keys['ArrowDown'] && players.p2.y < canvas.height - 15) players.p2.y += 5;
+        if (keys['ArrowLeft'] && players.p2.x > 15) players.p2.x -= 5;
+        if (keys['ArrowRight'] && players.p2.x < canvas.width - 15) players.p2.x += 5;
+        if (keys['Enter']) { shoot(players.p2, players.p1.x, players.p1.y); keys['Enter'] = false; }
+
+        // Atualizar Projéteis e Colisões
         projectiles.forEach((p, index) => {
             p.x += p.vx;
             p.y += p.vy;
+
+            // Checar se atingiu o P2 (se o tiro for do P1)
+            if (p.owner === players.p1) {
+                let dist = Math.hypot(p.x - players.p2.x, p.y - players.p2.y);
+                if (dist < players.p2.radius + 5) {
+                    createSplatter(p.x, p.y, p.color);
+                    projectiles.splice(index, 1);
+                }
+            }
+
+            // Checar se atingiu o P1 (se o tiro for do P2)
+            if (p.owner === players.p2) {
+                let dist = Math.hypot(p.x - players.p1.x, p.y - players.p1.y);
+                if (dist < players.p1.radius + 5) {
+                    createSplatter(p.x, p.y, p.color);
+                    projectiles.splice(index, 1);
+                }
+            }
 
             // Remover se sair da tela
             if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
@@ -77,17 +94,37 @@
         });
     }
 
+    // Efeito de tinta no chão
+    const splatters = [];
+    function createSplatter(x, y, color) {
+        splatters.push({x, y, color, r: Math.random() * 10 + 5});
+    }
+
     function draw() {
-        // Limpar rastro (para efeito de paintball, você pode não limpar tudo!)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; 
+        // Fundo
+        ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Desenhar Jogador
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-        ctx.fillStyle = player.color;
-        ctx.fill();
-        ctx.closePath();
+        // Desenhar manchas de tinta (o "paint" do paintball)
+        splatters.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.globalAlpha = 0.6;
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        });
+
+        // Desenhar Jogadores
+        for (let id in players) {
+            let p = players[id];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+        }
 
         // Desenhar Tiros
         projectiles.forEach(p => {
@@ -95,7 +132,6 @@
             ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
             ctx.fillStyle = p.color;
             ctx.fill();
-            ctx.closePath();
         });
 
         requestAnimationFrame(() => {
