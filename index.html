@@ -2,21 +2,39 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>3D Fighter Multiplayer</title>
+    <title>Cyber-Strike 3D Multiplayer</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; }
-        #chat { position: absolute; bottom: 10px; left: 10px; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* UI de Combate */
+        #game-ui { position: absolute; width: 100%; top: 20px; display: flex; justify-content: space-around; pointer-events: none; }
+        .health-bar-container { width: 40%; height: 30px; background: rgba(255,255,255,0.1); border: 2px solid #fff; position: relative; }
+        .health-fill { height: 100%; width: 100%; transition: width 0.2s ease-out; }
+        #health-p1 { background: linear-gradient(90deg, #00ff00, #aaff00); }
+        #health-p2 { background: linear-gradient(90deg, #ff0000, #ff5500); }
+        
+        #connection-panel { 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; color: #fff;
+            border: 1px solid #444; text-align: center;
+        }
+        input { background: #222; border: 1px solid #555; color: #fff; padding: 5px; margin: 5px; }
+        button { background: #007bff; color: #fff; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h2>3D Multiplayer Arena</h2>
-        <p>Seu ID: <span id="my-id">3455</span></p>
-        <input type="text" id="peer-id-input" placeholder="ID do oponente">
-        <button onclick="connectToPeer()">Conectar e Lutar</button>
-        <div id="status">Aguardando conexão...</div>
+    <div id="game-ui">
+        <div class="health-bar-container"><div id="health-p1" class="health-fill"></div></div>
+        <div class="health-bar-container"><div id="health-p2" class="health-fill"></div></div>
+    </div>
+
+    <div id="connection-panel">
+        <div id="status">Aguardando...</div>
+        <small>Seu ID: <span id="my-id">...</span></small><br>
+        <input type="text" id="peer-id-input" placeholder="ID do Oponente">
+        <button onclick="connectToPeer()">Conectar para Lutar</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -24,123 +42,98 @@
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
 
     <script>
-        // --- CONFIGURAÇÃO INICIAL ---
+        // --- CONFIGURAÇÃO DE CENA ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        scene.fog = new THREE.Fog(0x000000, 10, 50);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
         // --- FÍSICA ---
         const world = new CANNON.World();
-        world.gravity.set(0, -9.82, 0);
+        world.gravity.set(0, -20, 0);
 
-        // --- CHÃO ---
-        const groundGeo = new THREE.PlaneGeometry(20, 20);
-        const groundMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
+        // --- CHÃO ESTILIZADO ---
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshPhongMaterial({ color: 0x111111, shininess: 100 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const grid = new THREE.GridHelper(100, 50, 0x00ff00, 0x222222);
+        scene.add(grid);
 
         const groundBody = new CANNON.Body({ mass: 0 });
         groundBody.addShape(new CANNON.Plane());
         groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
         world.addBody(groundBody);
 
-        // --- JOGADORES (Cubos para simplificar) ---
-        function createPlayer(color, startX) {
-            const mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 2, 1),
-                new THREE.MeshPhongMaterial({ color: color })
-            );
-            scene.add(mesh);
+        // --- CLASSE JOGADOR ---
+        class Player {
+            constructor(color, x, isLocal) {
+                this.health = 100;
+                this.isLocal = isLocal;
+                
+                // Visual
+                this.mesh = new THREE.Group();
+                const bodyGeo = new THREE.BoxGeometry(1, 2, 0.8);
+                const bodyMat = new THREE.MeshPhongMaterial({ color: color });
+                this.bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+                this.bodyMesh.castShadow = true;
+                this.mesh.add(this.bodyMesh);
 
-            const body = new CANNON.Body({
-                mass: 1,
-                shape: new CANNON.Box(new CANNON.Vec3(0.5, 1, 0.5)),
-                position: new CANNON.Vec3(startX, 5, 0)
-            });
-            world.addBody(body);
-            return { mesh, body };
+                // "Mão" para ataque
+                this.hand = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshPhongMaterial({color: 0xffffff}));
+                this.hand.position.set(0.6, 0.2, 0.5);
+                this.mesh.add(this.hand);
+
+                scene.add(this.mesh);
+
+                // Física
+                this.physicsBody = new CANNON.Body({
+                    mass: 1,
+                    shape: new CANNON.Box(new CANNON.Vec3(0.5, 1, 0.4)),
+                    position: new CANNON.Vec3(x, 2, 0),
+                    fixedRotation: true
+                });
+                world.addBody(this.physicsBody);
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if(this.health < 0) this.health = 0;
+                updateUI();
+            }
+
+            attack() {
+                // Animação simples de soco
+                this.hand.position.z = 1.2;
+                setTimeout(() => this.hand.position.z = 0.5, 100);
+                return this.physicsBody.position;
+            }
         }
 
-        const player = createPlayer(0x00ff00, -2);
-        const opponent = createPlayer(0xff0000, 2);
+        const p1 = new Player(0x00aaff, -3, true);
+        const p2 = new Player(0xff0044, 3, false);
 
-        // Iluminação
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
+        // --- ILUMINAÇÃO ---
+        const pLight = new THREE.PointLight(0x00ff00, 1, 20);
+        pLight.position.set(0, 5, 0);
+        scene.add(pLight);
+        scene.add(new THREE.AmbientLight(0x444444));
 
-        camera.position.z = 10;
-        camera.position.y = 5;
-        camera.lookAt(0, 0, 0);
+        camera.position.set(0, 4, 12);
+        camera.lookAt(0, 2, 0);
 
-        // --- MULTIPLAYER (PeerJS) ---
+        // --- MULTIPLAYER & CONTROLES ---
         const peer = new Peer();
-        let conn;
+        let connection;
+        const keys = {};
 
-        peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
-        });
-
-        peer.on('connection', (c) => {
-            conn = c;
-            setupDataHandlers();
-        });
+        peer.on('open', id => document.getElementById('my-id').innerText = id);
+        peer.on('connection', conn => { connection = conn; setupNetwork(); });
 
         function connectToPeer() {
-            const remoteId = document.getElementById('peer-id-input').value;
-            conn = peer.connect(remoteId);
-            setupDataHandlers();
-        }
-
-        function setupDataHandlers() {
-            conn.on('open', () => {
-                document.getElementById('status').innerText = "Conectado!";
-                setInterval(() => {
-                    conn.send({
-                        x: player.body.position.x,
-                        y: player.body.position.y,
-                        z: player.body.position.z
-                    });
-                }, 50);
-            });
-
-            conn.on('data', (data) => {
-                opponent.body.position.set(data.x, data.y, data.z);
-            });
-        }
-
-        // --- CONTROLES ---
-        const keys = {};
-        window.addEventListener('keydown', (e) => keys[e.code] = true);
-        window.addEventListener('keyup', (e) => keys[e.code] = false);
-
-        function updateMovement() {
-            const speed = 0.1;
-            if (keys['ArrowLeft']) player.body.position.x -= speed;
-            if (keys['ArrowRight']) player.body.position.x += speed;
-            if (keys['Space'] && Math.abs(player.body.velocity.y) < 0.1) player.body.velocity.y = 5;
-        }
-
-        // --- LOOP DE ANIMAÇÃO ---
-        function animate() {
-            requestAnimationFrame(animate);
-            world.step(1/60);
-            updateMovement();
-
-            // Sincronizar malha visual com corpo físico
-            player.mesh.position.copy(player.body.position);
-            player.mesh.quaternion.copy(player.body.quaternion);
-            opponent.mesh.position.copy(opponent.body.position);
-            opponent.mesh.quaternion.copy(opponent.body.quaternion);
-
-            renderer.render(scene, camera);
-        }
-        animate();
-
-    </script>
-</body>
-</html>
