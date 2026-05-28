@@ -11,7 +11,6 @@
 
   #canvas-container { position: relative; width: 100vw; height: 100vh; }
 
-  /* HUD */
   #hud {
     position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
     padding: 18px 24px 0;
@@ -52,7 +51,6 @@
     margin-bottom: 3px; text-transform: uppercase;
   }
 
-  /* Stamina bar */
   .stamina-track {
     height: 6px; border-radius: 2px; margin-top: 4px;
     background: rgba(255,255,255,0.06);
@@ -62,7 +60,6 @@
   #st1-fill { height: 100%; background: #ffd600; width: 100%; transition: width 0.1s; }
   #st2-fill { height: 100%; background: #ffd600; width: 100%; float: right; transition: width 0.1s; }
 
-  /* Timer */
   #timer-box {
     text-align: center; width: 80px;
     background: rgba(0,0,0,0.7);
@@ -77,7 +74,6 @@
   }
   #round-label { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 2px; }
 
-  /* Round display */
   .round-pips { display: flex; gap: 4px; justify-content: flex-start; margin-top: 5px; }
   .right .round-pips { justify-content: flex-end; }
   .pip {
@@ -88,7 +84,6 @@
   }
   .pip.won { background: #ffd600; border-color: #ffd600; box-shadow: 0 0 6px #ffd600; }
 
-  /* Combo counter */
   #combo-display {
     position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
     text-align: center; pointer-events: none; z-index: 10;
@@ -101,7 +96,6 @@
   }
   #combo-text { font-size: 13px; letter-spacing: 4px; color: rgba(255,255,255,0.5); }
 
-  /* Damage numbers */
   .dmg-popup {
     position: absolute; pointer-events: none; z-index: 20;
     font-family: 'Bebas Neue', sans-serif; font-size: 36px;
@@ -113,7 +107,6 @@
     100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
   }
 
-  /* Announcer messages */
   #msg {
     position: absolute; top: 38%; width: 100%; text-align: center;
     pointer-events: none; z-index: 30; display: none;
@@ -134,7 +127,6 @@
     100% { transform: scale(1) skewX(0); opacity: 1; }
   }
 
-  /* Round announce */
   #round-announce {
     position: absolute; top: 42%; width: 100%; text-align: center;
     pointer-events: none; z-index: 30; display: none;
@@ -145,7 +137,6 @@
     animation: msgPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
   }
 
-  /* Controls overlay */
   #controls {
     position: absolute; bottom: 12px; left: 0; right: 0;
     display: flex; justify-content: space-between; padding: 0 18px;
@@ -161,17 +152,13 @@
     border-radius: 3px; padding: 0 4px; font-size: 10px; color: rgba(255,255,255,0.5);
   }
 
-  /* Hit flash overlay */
   #hit-flash { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; }
-
-  /* Screen shake handled via canvas */
 </style>
 </head>
 <body>
 <div id="canvas-container">
   <div id="hit-flash"></div>
 
-  <!-- HUD -->
   <div id="hud">
     <div class="fighter-hud" id="p1-hud">
       <div class="fighter-name" id="p1-name">STONE</div>
@@ -230,19 +217,20 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 <script>
 // ============================================================
-//  IRON FIST 3D — Engine
+//  IRON FIST 3D — Engine com física manual de chão
 // ============================================================
+
+const FLOOR_Y = -1.0;       // nível do chão (mundo Three.js)
+const FIGHTER_HALF_H = 1.1; // metade da altura do personagem
+const FLOOR_LEVEL = FLOOR_Y + FIGHTER_HALF_H; // y mínimo do centro do personagem
+const GRAVITY = -38;
+const ARENA_X_MIN = -17;
+const ARENA_X_MAX = 17;
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x0a0a14, 0.03);
-
-const world = new CANNON.World();
-world.gravity.set(0, -38, 0);
-world.broadphase = new CANNON.NaiveBroadphase();
-world.solver.iterations = 10;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -263,60 +251,41 @@ window.addEventListener('resize', () => {
 
 // ── ARENA ──────────────────────────────────────────────────
 function buildArena() {
-  // Floor
   const floorGeo = new THREE.PlaneGeometry(36, 18);
-  const floorMat = new THREE.MeshStandardMaterial({
-    color: 0x1a1a2e, roughness: 0.9, metalness: 0.1
-  });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.9, metalness: 0.1 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -1;
+  floor.position.y = FLOOR_Y;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Floor grid lines
   const grid = new THREE.GridHelper(36, 18, 0x00e5ff, 0x1e1e3a);
-  grid.position.y = -0.99;
+  grid.position.y = FLOOR_Y + 0.01;
   grid.material.opacity = 0.25;
   grid.material.transparent = true;
   scene.add(grid);
 
-  // Platform edge glow strips
   const edgeMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6 });
   [-18, 18].forEach(x => {
     const edge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 18), edgeMat);
-    edge.position.set(x, -0.97, 0);
+    edge.position.set(x, FLOOR_Y + 0.03, 0);
     scene.add(edge);
   });
   const fEdge1 = new THREE.Mesh(new THREE.BoxGeometry(36, 0.05, 0.1), edgeMat);
-  fEdge1.position.set(0, -0.97, -9); scene.add(fEdge1);
+  fEdge1.position.set(0, FLOOR_Y + 0.03, -9); scene.add(fEdge1);
   const fEdge2 = fEdge1.clone(); fEdge2.position.z = 9; scene.add(fEdge2);
 
-  // Physics ground
-  const groundBody = new CANNON.Body({
-    mass: 0,
-    shape: new CANNON.Plane(),
-    position: new CANNON.Vec3(0, -1, 0)
-  });
-  groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-  world.addBody(groundBody);
-
-  // Background pillars
   const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0d0d1a, roughness: 0.8 });
   [-14, -7, 0, 7, 14].forEach(x => {
     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 14, 8), pillarMat);
-    p.position.set(x, 6, -8);
-    p.castShadow = true;
-    p.receiveShadow = true;
+    p.position.set(x, 6, -8); p.castShadow = true; p.receiveShadow = true;
     scene.add(p);
-    // Top glow
     const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 8),
       new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
     glow.position.set(x, 13.1, -8);
     scene.add(glow);
   });
 
-  // Crowd silhouettes (simple planes)
   const crowdMat = new THREE.MeshBasicMaterial({ color: 0x0b0b18, side: THREE.DoubleSide });
   for (let i = -14; i <= 14; i += 1.5) {
     const h = 2 + Math.random() * 2;
@@ -328,27 +297,22 @@ function buildArena() {
 buildArena();
 
 // ── LIGHTS ─────────────────────────────────────────────────
-const ambient = new THREE.AmbientLight(0x151525, 1.5);
-scene.add(ambient);
+scene.add(new THREE.AmbientLight(0x151525, 1.5));
 
 const mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
 mainLight.position.set(2, 12, 8);
 mainLight.castShadow = true;
 mainLight.shadow.mapSize.set(2048, 2048);
-mainLight.shadow.camera.near = 0.1;
-mainLight.shadow.camera.far = 60;
+mainLight.shadow.camera.near = 0.1; mainLight.shadow.camera.far = 60;
 mainLight.shadow.camera.left = -20; mainLight.shadow.camera.right = 20;
-mainLight.shadow.camera.top = 15; mainLight.shadow.camera.bottom = -5;
+mainLight.shadow.camera.top = 15;   mainLight.shadow.camera.bottom = -5;
 scene.add(mainLight);
 
 const rimL = new THREE.PointLight(0x00e5ff, 3, 20);
-rimL.position.set(-10, 6, 2);
-scene.add(rimL);
+rimL.position.set(-10, 6, 2); scene.add(rimL);
 const rimR = new THREE.PointLight(0xff1744, 3, 20);
-rimR.position.set(10, 6, 2);
-scene.add(rimR);
+rimR.position.set(10, 6, 2);  scene.add(rimR);
 
-// Overhead spots
 [-6, 0, 6].forEach(x => {
   const spot = new THREE.SpotLight(0xffffff, 2, 30, 0.35, 0.5);
   spot.position.set(x, 16, 0);
@@ -356,7 +320,7 @@ scene.add(rimR);
   scene.add(spot); scene.add(spot.target);
 });
 
-// ── PARTICLE SYSTEM ────────────────────────────────────────
+// ── PARTICLES ──────────────────────────────────────────────
 const MAX_PARTICLES = 200;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(MAX_PARTICLES * 3);
@@ -372,13 +336,12 @@ function spawnHitParticles(x, y, z, count = 20) {
   let spawned = 0;
   for (let i = 0; i < MAX_PARTICLES && spawned < count; i++) {
     if (!pData[i].active) {
-      pData[i].active = true;
-      pData[i].life = 0;
+      pData[i].active = true; pData[i].life = 0;
       pData[i].maxLife = 0.4 + Math.random() * 0.4;
       pData[i].vx = (Math.random() - 0.5) * 8;
       pData[i].vy = 2 + Math.random() * 5;
       pData[i].vz = (Math.random() - 0.5) * 4;
-      pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
+      pPos[i*3] = x; pPos[i*3+1] = y; pPos[i*3+2] = z;
       spawned++;
     }
   }
@@ -389,205 +352,146 @@ function updateParticles(dt) {
     if (!pData[i].active) continue;
     pData[i].life += dt;
     if (pData[i].life >= pData[i].maxLife) { pData[i].active = false; continue; }
-    pPos[i * 3] += pData[i].vx * dt;
-    pPos[i * 3 + 1] += pData[i].vy * dt - 12 * dt * dt;
-    pPos[i * 3 + 2] += pData[i].vz * dt;
-    pData[i].vy -= 18 * dt;
+    pPos[i*3]   += pData[i].vx * dt;
+    pPos[i*3+1] += pData[i].vy * dt;
+    pPos[i*3+2] += pData[i].vz * dt;
+    pData[i].vy += GRAVITY * dt;
   }
   pGeo.attributes.position.needsUpdate = true;
 }
 
 // ── FIGHTER CLASS ───────────────────────────────────────────
-const STATES = { IDLE: 'idle', WALK: 'walk', JUMP: 'jump', PUNCH: 'punch', KICK: 'kick', BLOCK: 'block', HURT: 'hurt', SPECIAL: 'special', KO: 'ko' };
+const STATES = { IDLE:'idle', WALK:'walk', JUMP:'jump', PUNCH:'punch', KICK:'kick', BLOCK:'block', HURT:'hurt', SPECIAL:'special', KO:'ko' };
 
 class Fighter {
   constructor({ x, color, skinColor, id, name, facing }) {
-    this.id = id;
-    this.name = name;
-    this.facing = facing; // 1 = right, -1 = left
-    this.hp = 100;
-    this.maxHp = 100;
-    this.stamina = 100;
-    this.maxStamina = 100;
-    this.state = STATES.IDLE;
-    this.stateTime = 0;
-    this.canJump = true;
-    this.combo = 0;
-    this.lastHitTime = 0;
-    this.hitCooldown = 0;
-    this.shakeTime = 0;
-    this.specialCharge = 0;
-    this.isGrounded = false;
+    this.id = id; this.name = name; this.facing = facing;
+    this.hp = 100; this.maxHp = 100;
+    this.stamina = 100; this.maxStamina = 100;
+    this.state = STATES.IDLE; this.stateTime = 0;
+    this.combo = 0; this.hitCooldown = 0; this.shakeTime = 0;
+
+    // Física manual — posição e velocidade como vetores simples
+    this.pos = new THREE.Vector3(x, FLOOR_LEVEL, 0);
+    this.vel = new THREE.Vector3(0, 0, 0);
+    this.isGrounded = true;
+    this.opponent = null;
 
     this._buildMesh(color, skinColor);
-    this._buildPhysics(x);
   }
 
   _buildMesh(color, skinColor) {
     this.group = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.2 });
+    const mat  = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.2 });
     const skin = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.7 });
     const dark = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
     const shoe = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 });
 
-    // Root pivot
     this.root = new THREE.Group();
     this.group.add(this.root);
 
-    // Torso
     this.torso = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.3, 0.55), mat);
-    this.torso.position.y = 0.1;
-    this.torso.castShadow = true;
+    this.torso.position.y = 0.1; this.torso.castShadow = true;
     this.root.add(this.torso);
 
-    // Head
     this.head = new THREE.Group();
     this.head.position.y = 1.05;
     this.root.add(this.head);
     const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.52, 0.52), skin);
-    headMesh.castShadow = true;
-    this.head.add(headMesh);
-    // Eyes
+    headMesh.castShadow = true; this.head.add(headMesh);
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
     [-0.12, 0.12].forEach(ex => {
       const eye = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.01), eyeMat);
-      eye.position.set(ex, 0.05, 0.27);
-      this.head.add(eye);
+      eye.position.set(ex, 0.05, 0.27); this.head.add(eye);
     });
 
-    // Belt
     const belt = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.18, 0.56), dark);
-    belt.position.y = -0.58;
-    this.root.add(belt);
+    belt.position.y = -0.58; this.root.add(belt);
 
-    // Arms (pivot at shoulder)
-    this.armPivotL = new THREE.Group(); this.armPivotL.position.set(0.6, 0.4, 0);
+    this.armPivotL = new THREE.Group(); this.armPivotL.position.set( 0.6, 0.4, 0);
     this.armPivotR = new THREE.Group(); this.armPivotR.position.set(-0.6, 0.4, 0);
-
     const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.55, 6), mat);
     upperArm.position.y = -0.27;
     const lowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.5, 6), skin);
     lowerArm.position.y = -0.8;
     const fist = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 0.22), skin);
     fist.position.y = -1.1;
-
     [this.armPivotL, this.armPivotR].forEach(a => {
       a.add(upperArm.clone(), lowerArm.clone(), fist.clone());
       a.children.forEach(c => c.castShadow = true);
     });
     this.root.add(this.armPivotL, this.armPivotR);
 
-    // Legs (pivot at hip)
-    this.legPivotL = new THREE.Group(); this.legPivotL.position.set(0.26, -0.7, 0);
+    this.legPivotL = new THREE.Group(); this.legPivotL.position.set( 0.26, -0.7, 0);
     this.legPivotR = new THREE.Group(); this.legPivotR.position.set(-0.26, -0.7, 0);
-
     const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.65, 6), dark);
     thigh.position.y = -0.33;
-    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.6, 6), dark);
+    const shin  = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.6, 6), dark);
     shin.position.y = -0.88;
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.38), shoe);
+    const foot  = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.38), shoe);
     foot.position.set(0, -1.23, 0.1);
-
     [this.legPivotL, this.legPivotR].forEach(l => {
       l.add(thigh.clone(), shin.clone(), foot.clone());
       l.children.forEach(c => c.castShadow = true);
     });
     this.root.add(this.legPivotL, this.legPivotR);
 
-    // Health indicator glow under feet
     const glowGeo = new THREE.CircleGeometry(0.5, 16);
     glowGeo.rotateX(-Math.PI / 2);
     this.groundGlow = new THREE.Mesh(glowGeo,
       new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending }));
-    this.groundGlow.position.y = -1.01;
-    this.group.add(this.groundGlow);
+    this.groundGlow.position.y = FLOOR_Y + 0.01;
+    scene.add(this.groundGlow);
 
     scene.add(this.group);
   }
 
-  _buildPhysics(x) {
-    this.body = new CANNON.Body({
-      mass: 2,
-      shape: new CANNON.Box(new CANNON.Vec3(0.45, 1.1, 0.28)),
-      position: new CANNON.Vec3(x, 5, 0),
-      fixedRotation: true,
-      linearDamping: 0.2,
-      angularDamping: 1.0
-    });
-    this.body.collisionFilterGroup = 1;
-    this.body.collisionFilterMask = 2;
-    world.addBody(this.body);
-
-    this.body.addEventListener('collide', (e) => {
-      const normal = e.contact.ni;
-      if (Math.abs(normal.y) > 0.5) {
-        this.canJump = true;
-        this.isGrounded = true;
-      }
-    });
-  }
-
   setState(s, force = false) {
-    if (!force && (this.state === STATES.KO)) return;
+    if (!force && this.state === STATES.KO) return;
     if (this.state !== s) { this.state = s; this.stateTime = 0; }
   }
 
   applyControl(input) {
     if (this.state === STATES.KO || this.state === STATES.HURT) return;
-    const spd = 9;
     const blocking = input.block;
 
-    // Facing direction toward opponent
     if (this.opponent) {
-      const dir = this.opponent.body.position.x - this.body.position.x;
+      const dir = this.opponent.pos.x - this.pos.x;
       this.facing = dir > 0 ? 1 : -1;
     }
 
-    // Block
     if (blocking) {
       this.setState(STATES.BLOCK);
-      this.body.velocity.x *= 0.7;
+      this.vel.x *= 0.7;
       this.regenStamina(0.01);
       return;
     }
 
-    // Special
     if (input.special && this.stamina >= 30 && this.state !== STATES.PUNCH && this.state !== STATES.KICK) {
       this.stamina -= 30;
       this.setState(STATES.SPECIAL);
     }
-
-    // Attack
     if (input.punch && this.state !== STATES.PUNCH && this.state !== STATES.KICK && this.state !== STATES.SPECIAL) {
-      if (this.stamina >= 8) {
-        this.stamina -= 8;
-        this.setState(STATES.PUNCH);
-      }
+      if (this.stamina >= 8) { this.stamina -= 8; this.setState(STATES.PUNCH); }
     }
     if (input.kick && this.state !== STATES.PUNCH && this.state !== STATES.KICK && this.state !== STATES.SPECIAL) {
-      if (this.stamina >= 10) {
-        this.stamina -= 10;
-        this.setState(STATES.KICK);
-      }
+      if (this.stamina >= 10) { this.stamina -= 10; this.setState(STATES.KICK); }
     }
 
-    // Movement
+    const spd = 9;
     const vx = input.left ? -spd : input.right ? spd : 0;
     if (this.state !== STATES.PUNCH && this.state !== STATES.KICK && this.state !== STATES.SPECIAL) {
-      this.body.velocity.x = vx;
+      this.vel.x = vx;
       if (vx !== 0) this.setState(STATES.WALK);
       else if (this.state === STATES.WALK) this.setState(STATES.IDLE);
     }
 
-    // Jump
-    if (input.jump && this.canJump && this.isGrounded) {
-      this.body.velocity.y = 18;
-      this.canJump = false;
+    if (input.jump && this.isGrounded) {
+      this.vel.y = 18;
       this.isGrounded = false;
       this.setState(STATES.JUMP);
     }
 
-    // Stamina regen
     if (this.state === STATES.IDLE || this.state === STATES.WALK) this.regenStamina(0.008);
   }
 
@@ -595,18 +499,50 @@ class Fighter {
     this.stamina = Math.min(this.maxStamina, this.stamina + rate * 60);
   }
 
+  // ── FÍSICA MANUAL ──────────────────────────────────────
+  physicsStep(dt) {
+    if (this.state === STATES.KO) return;
+
+    // Gravidade
+    if (!this.isGrounded) {
+      this.vel.y += GRAVITY * dt;
+    }
+
+    // Integração
+    this.pos.x += this.vel.x * dt;
+    this.pos.y += this.vel.y * dt;
+    this.pos.z  = 0; // sempre no mesmo plano
+
+    // ── Colisão com o chão ──────────────────────────────
+    if (this.pos.y <= FLOOR_LEVEL) {
+      this.pos.y   = FLOOR_LEVEL;
+      this.vel.y   = 0;
+      this.isGrounded = true;
+      if (this.state === STATES.JUMP) this.setState(STATES.IDLE);
+    } else {
+      this.isGrounded = false;
+    }
+
+    // Limita arena horizontalmente
+    if (this.pos.x < ARENA_X_MIN) { this.pos.x = ARENA_X_MIN; this.vel.x = 0; }
+    if (this.pos.x > ARENA_X_MAX) { this.pos.x = ARENA_X_MAX; this.vel.x = 0; }
+
+    // Atrito horizontal no chão
+    if (this.isGrounded) {
+      if (this.state !== STATES.WALK) this.vel.x *= 0.75;
+    }
+  }
+
   animate(dt) {
     const t = performance.now() * 0.001;
     this.stateTime += dt;
 
-    // Sync mesh to physics
-    this.group.position.copy(this.body.position);
-    this.group.position.y -= 0.5;
+    // Sincroniza mesh com a posição física
+    this.group.position.copy(this.pos);
+    this.group.position.y -= FIGHTER_HALF_H; // ajuste visual (origem no centro)
 
-    // Face direction
     this.root.rotation.y = this.facing > 0 ? 0 : Math.PI;
 
-    // SHAKE effect when hurt
     if (this.shakeTime > 0) {
       this.group.position.x += (Math.random() - 0.5) * 0.15;
       this.shakeTime -= dt;
@@ -614,22 +550,14 @@ class Fighter {
 
     this._animatePose(dt, t);
 
-    // Fell off
-    if (this.body.position.y < -8 && this.state !== STATES.KO) {
-      this.hp = 0;
-      this.setState(STATES.KO, true);
-    }
-
-    // Grounded check
-    if (this.body.position.y < 0.3 && Math.abs(this.body.velocity.y) < 1) this.isGrounded = true;
-    else this.isGrounded = false;
+    // Glow no chão
+    this.groundGlow.position.x = this.pos.x;
+    this.groundGlow.position.z = this.pos.z;
   }
 
   _animatePose(dt, t) {
-    const lerp = (a, b, f) => a + (b - a) * f;
     const lerpAngle = 0.15;
-
-    const setArms = (lx, rx, lz = 0, rz = 0, lpz = 0, rpz = 0) => {
+    const setArms = (lx, rx, lz = 0, rz = 0) => {
       this.armPivotL.rotation.x += (lx - this.armPivotL.rotation.x) * lerpAngle;
       this.armPivotR.rotation.x += (rx - this.armPivotR.rotation.x) * lerpAngle;
       this.armPivotL.rotation.z += (lz - this.armPivotL.rotation.z) * lerpAngle;
@@ -668,19 +596,16 @@ class Fighter {
           this.armPivotR.rotation.x = ext;
           this.armPivotR.position.z = Math.abs(ext) * 0.28;
           this.torso.rotation.y = -0.3 * Math.sin(p * Math.PI);
-          setArms(this.armPivotL.rotation.x, this.armPivotR.rotation.x);
-          setLegs(-0.1, 0.1);
         } else {
           this.armPivotR.position.z = 0;
-          if (p >= 1) { this.setState(STATES.IDLE); }
+          if (p >= 1) this.setState(STATES.IDLE);
         }
         break;
       }
       case STATES.KICK: {
         const k = this.stateTime / 0.32;
         if (k < 0.5) {
-          const ext = Math.sin(k * Math.PI * 2) * -1.6;
-          this.legPivotR.rotation.x = ext;
+          this.legPivotR.rotation.x = Math.sin(k * Math.PI * 2) * -1.6;
           this.torso.rotation.y = -0.2 * Math.sin(k * Math.PI);
         } else {
           if (k >= 1) { this.legPivotR.rotation.x = 0; this.setState(STATES.IDLE); }
@@ -709,165 +634,126 @@ class Fighter {
       }
       case STATES.KO: {
         this.root.rotation.z += (1.5 - this.root.rotation.z) * 0.05;
-        this.root.position.y -= 0.05;
+        this.root.position.y = Math.max(this.root.position.y - 0.05, -1.0);
         break;
       }
     }
 
-    // Reset arm pivot Z when not blocking
     if (this.state !== STATES.BLOCK) {
       this.armPivotL.position.z *= 0.8;
       this.armPivotR.position.z *= 0.8;
     }
   }
 
-  // Returns hit box position for this frame's attack
   getHitPoint() {
-    const fwd = new THREE.Vector3(this.facing, 0, 0);
     return new THREE.Vector3(
-      this.body.position.x + fwd.x * 1.2,
-      this.body.position.y + 0.3,
-      this.body.position.z
+      this.pos.x + this.facing * 1.2,
+      this.pos.y + 0.3,
+      this.pos.z
     );
   }
-
   getKickPoint() {
-    const fwd = new THREE.Vector3(this.facing, 0, 0);
     return new THREE.Vector3(
-      this.body.position.x + fwd.x * 1.3,
-      this.body.position.y - 0.6,
-      this.body.position.z
+      this.pos.x + this.facing * 1.3,
+      this.pos.y - 0.6,
+      this.pos.z
     );
   }
 }
 
 // ── GAME STATE ──────────────────────────────────────────────
-let round = 1;
-let maxRounds = 3;
-let gameOver = false;
-let roundActive = false;
-let countdownTimer = 99;
-let timerInterval = null;
-let roundWins = { 1: 0, 2: 0 };
-let p1LastCombo = 0;
-let p2LastCombo = 0;
-let comboFadeTimer = 0;
-let currentComboOwner = null;
-let shakeCamera = 0;
+let round = 1, maxRounds = 3, gameOver = false, roundActive = false;
+let countdownTimer = 99, timerInterval = null;
+let roundWins = {1:0, 2:0};
+let comboFadeTimer = 0, currentComboOwner = null, shakeCamera = 0;
 
-const p1 = new Fighter({ x: -5, color: 0x1565c0, skinColor: 0xffdbac, id: 1, name: 'STONE', facing: 1 });
-const p2 = new Fighter({ x: 5, color: 0xb71c1c, skinColor: 0xffdbac, id: 2, name: 'BLAZE', facing: -1 });
-p1.opponent = p2;
-p2.opponent = p1;
+const p1 = new Fighter({ x: -5, color: 0x1565c0, skinColor: 0xffdbac, id: 1, name: 'STONE', facing:  1 });
+const p2 = new Fighter({ x:  5, color: 0xb71c1c, skinColor: 0xffdbac, id: 2, name: 'BLAZE', facing: -1 });
+p1.opponent = p2; p2.opponent = p1;
 
 // ── INPUT ───────────────────────────────────────────────────
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault && ['ArrowUp','ArrowDown','Space'].includes(e.code) && e.preventDefault(); });
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+});
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 function getInput(pid) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : [];
-  const gp = gps[pid - 1];
-  if (pid === 1) {
-    return {
-      left: keys['KeyA'] || (gp?.axes[0] < -0.3),
-      right: keys['KeyD'] || (gp?.axes[0] > 0.3),
-      jump: keys['KeyW'] || (gp?.buttons[0]?.pressed),
-      punch: keys['Space'] || (gp?.buttons[2]?.pressed),
-      kick: keys['KeyV'] || (gp?.buttons[3]?.pressed),
-      block: keys['KeyQ'] || (gp?.buttons[1]?.pressed),
-      special: keys['KeyE'] || (gp?.buttons[4]?.pressed),
-    };
-  } else {
-    return {
-      left: keys['ArrowLeft'] || (gp?.axes[0] < -0.3),
-      right: keys['ArrowRight'] || (gp?.axes[0] > 0.3),
-      jump: keys['ArrowUp'] || (gp?.buttons[0]?.pressed),
-      punch: keys['KeyL'] || (gp?.buttons[2]?.pressed),
-      kick: keys['Period'] || (gp?.buttons[3]?.pressed),
-      block: keys['KeyP'] || (gp?.buttons[1]?.pressed),
-      special: keys['KeyO'] || (gp?.buttons[4]?.pressed),
-    };
-  }
+  const gp  = gps[pid - 1];
+  if (pid === 1) return {
+    left:    keys['KeyA']      || (gp?.axes[0] < -0.3),
+    right:   keys['KeyD']      || (gp?.axes[0] >  0.3),
+    jump:    keys['KeyW']      || (gp?.buttons[0]?.pressed),
+    punch:   keys['Space']     || (gp?.buttons[2]?.pressed),
+    kick:    keys['KeyV']      || (gp?.buttons[3]?.pressed),
+    block:   keys['KeyQ']      || (gp?.buttons[1]?.pressed),
+    special: keys['KeyE']      || (gp?.buttons[4]?.pressed),
+  };
+  return {
+    left:    keys['ArrowLeft']  || (gp?.axes[0] < -0.3),
+    right:   keys['ArrowRight'] || (gp?.axes[0] >  0.3),
+    jump:    keys['ArrowUp']    || (gp?.buttons[0]?.pressed),
+    punch:   keys['KeyL']       || (gp?.buttons[2]?.pressed),
+    kick:    keys['Period']      || (gp?.buttons[3]?.pressed),
+    block:   keys['KeyP']       || (gp?.buttons[1]?.pressed),
+    special: keys['KeyO']       || (gp?.buttons[4]?.pressed),
+  };
 }
 
 // ── COMBAT ──────────────────────────────────────────────────
-const HIT_FRAMES = { punch: [0.3, 0.6], kick: [0.25, 0.55], special: [0.35, 0.65] };
+const HIT_FRAMES = { punch:[0.3,0.6], kick:[0.25,0.55], special:[0.35,0.65] };
 
 function checkCombat() {
-  [[p1, p2], [p2, p1]].forEach(([atk, vic]) => {
+  [[p1,p2],[p2,p1]].forEach(([atk,vic]) => {
     if (atk.hitCooldown > 0) { atk.hitCooldown -= 1/60; return; }
     const { state, stateTime } = atk;
-    let range = null, damage = 0, hitPoint = null, knockback = 0, liftY = 0, staminaCost = 0;
+    let range = null, damage = 0, hitPoint = null, knockback = 0, liftY = 0;
 
     if (state === STATES.PUNCH) {
       const p = stateTime / 0.28;
-      if (p >= HIT_FRAMES.punch[0] && p <= HIT_FRAMES.punch[1]) {
-        range = 2.2; damage = 6 + Math.random() * 3; hitPoint = atk.getHitPoint(); knockback = 4; liftY = 3;
-      }
+      if (p >= HIT_FRAMES.punch[0] && p <= HIT_FRAMES.punch[1])
+        { range=2.2; damage=6+Math.random()*3; hitPoint=atk.getHitPoint(); knockback=4; liftY=5; }
     } else if (state === STATES.KICK) {
       const p = stateTime / 0.32;
-      if (p >= HIT_FRAMES.kick[0] && p <= HIT_FRAMES.kick[1]) {
-        range = 2.6; damage = 10 + Math.random() * 5; hitPoint = atk.getKickPoint(); knockback = 6; liftY = 4;
-      }
+      if (p >= HIT_FRAMES.kick[0] && p <= HIT_FRAMES.kick[1])
+        { range=2.6; damage=10+Math.random()*5; hitPoint=atk.getKickPoint(); knockback=6; liftY=6; }
     } else if (state === STATES.SPECIAL) {
       const p = stateTime / 0.5;
-      if (p >= HIT_FRAMES.special[0] && p <= HIT_FRAMES.special[1]) {
-        range = 3.0; damage = 22 + Math.random() * 8; hitPoint = atk.getHitPoint(); knockback = 9; liftY = 7;
-      }
+      if (p >= HIT_FRAMES.special[0] && p <= HIT_FRAMES.special[1])
+        { range=3.0; damage=22+Math.random()*8; hitPoint=atk.getHitPoint(); knockback=9; liftY=9; }
     }
 
     if (!range) return;
-    const dist = Math.hypot(
-      atk.body.position.x - vic.body.position.x,
-      atk.body.position.y - vic.body.position.y
-    );
+    const dist = Math.hypot(atk.pos.x - vic.pos.x, atk.pos.y - vic.pos.y);
     if (dist > range) return;
 
     const isBlocked = vic.state === STATES.BLOCK && vic.stamina > 0;
-    if (isBlocked) {
-      damage *= 0.15;
-      vic.stamina -= 12;
-      knockback *= 0.3;
-      liftY = 0;
-    }
+    if (isBlocked) { damage *= 0.15; vic.stamina -= 12; knockback *= 0.3; liftY = 0; }
 
-    // Apply damage
     vic.hp = Math.max(0, vic.hp - damage);
-    const dir = vic.body.position.x - atk.body.position.x > 0 ? 1 : -1;
-    vic.body.velocity.x = dir * knockback;
-    vic.body.velocity.y = isBlocked ? 0 : liftY;
+    const dir = vic.pos.x - atk.pos.x > 0 ? 1 : -1;
+    vic.vel.x = dir * knockback;
+    vic.vel.y = isBlocked ? 0 : liftY;
+    if (!isBlocked) vic.isGrounded = false; // força a física aérea
     vic.shakeTime = 0.15;
     atk.hitCooldown = 0.2;
 
-    if (!isBlocked) {
-      vic.setState(STATES.HURT, true);
-      vic.combo = 0;
-      atk.combo++;
-    }
+    if (!isBlocked) { vic.setState(STATES.HURT, true); vic.combo = 0; atk.combo++; }
 
-    // Particles
     if (hitPoint) spawnHitParticles(hitPoint.x, hitPoint.y, hitPoint.z, isBlocked ? 8 : 20);
-
-    // Screen shake
     shakeCamera = isBlocked ? 0.1 : 0.25 + (state === STATES.SPECIAL ? 0.3 : 0);
-
-    // Damage popup
     showDamagePopup(hitPoint, Math.round(damage), isBlocked);
-
-    // Hit flash
     flashScreen(isBlocked ? 0.12 : 0.25);
 
-    // Combo HUD
     if (!isBlocked) {
       currentComboOwner = atk.id;
       comboFadeTimer = 2.5;
       updateComboHUD(atk.combo);
     }
 
-    // HP bars
     document.getElementById(`hp${vic.id}-fill`).style.width = (vic.hp / vic.maxHp * 100) + '%';
-    document.getElementById(`st${atk.id}-fill`).style.width = (atk.stamina / atk.maxStamina * 100) + '%';
 
     if (vic.hp <= 0 && vic.state !== STATES.KO) {
       vic.setState(STATES.KO, true);
@@ -875,12 +761,11 @@ function checkCombat() {
     }
   });
 
-  // Stamina HUD
   document.getElementById('st1-fill').style.width = (p1.stamina / p1.maxStamina * 100) + '%';
   document.getElementById('st2-fill').style.width = (p2.stamina / p2.maxStamina * 100) + '%';
 }
 
-// ── HUD HELPERS ─────────────────────────────────────────────
+// ── HUD ──────────────────────────────────────────────────────
 function flashScreen(intensity) {
   const el = document.getElementById('hit-flash');
   el.style.background = `rgba(255,255,255,${intensity})`;
@@ -896,7 +781,7 @@ function showDamagePopup(pos, dmg, blocked) {
   const el = document.createElement('div');
   el.className = 'dmg-popup';
   el.textContent = blocked ? `${dmg} BLOCKED` : dmg;
-  el.style.cssText = `left:${x - 20}px;top:${y}px;color:${blocked ? '#aaa' : '#fff'};font-size:${blocked ? 18 : 36}px`;
+  el.style.cssText = `left:${x-20}px;top:${y}px;color:${blocked?'#aaa':'#fff'};font-size:${blocked?18:36}px`;
   document.getElementById('canvas-container').appendChild(el);
   setTimeout(() => el.remove(), 900);
 }
@@ -906,20 +791,15 @@ function updateComboHUD(count) {
   document.getElementById('combo-count').textContent = count;
   if (count >= 2) {
     el.style.opacity = 1;
-    const colors = ['#fff', '#ffd600', '#ff6d00', '#ff1744', '#e040fb'];
-    const idx = Math.min(count - 1, colors.length - 1);
-    document.getElementById('combo-count').style.color = colors[idx];
-  } else {
-    el.style.opacity = 0;
-  }
+    const colors = ['#fff','#ffd600','#ff6d00','#ff1744','#e040fb'];
+    document.getElementById('combo-count').style.color = colors[Math.min(count-1, colors.length-1)];
+  } else { el.style.opacity = 0; }
 }
 
 function showAnnounce(text, sub = '', duration = 2500) {
   const el = document.getElementById('msg');
-  const txt = document.getElementById('msg-text');
-  const sub2 = document.getElementById('msg-sub');
-  txt.textContent = text;
-  sub2.textContent = sub;
+  document.getElementById('msg-text').textContent = text;
+  document.getElementById('msg-sub').textContent  = sub;
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, duration);
 }
@@ -931,20 +811,12 @@ function showRoundAnnounce(text, duration = 1800) {
   setTimeout(() => { el.style.display = 'none'; }, duration);
 }
 
-// ── ROUND MANAGEMENT ────────────────────────────────────────
+// ── ROUND ────────────────────────────────────────────────────
 function startRound(r) {
-  round = r;
-  roundActive = false;
-  gameOver = false;
-  document.getElementById('round-label').textContent = `ROUND`;
+  round = r; roundActive = false; gameOver = false;
   document.getElementById('timer').textContent = '99';
-
   showRoundAnnounce(`ROUND ${r}`, 1500);
-  setTimeout(() => {
-    showRoundAnnounce('FIGHT!', 800);
-    roundActive = true;
-    startTimer();
-  }, 1800);
+  setTimeout(() => { showRoundAnnounce('FIGHT!', 800); roundActive = true; startTimer(); }, 1800);
 }
 
 function startTimer() {
@@ -954,10 +826,7 @@ function startTimer() {
     if (!roundActive) return;
     countdownTimer--;
     document.getElementById('timer').textContent = countdownTimer;
-    if (countdownTimer <= 0) {
-      clearInterval(timerInterval);
-      timeOutRound();
-    }
+    if (countdownTimer <= 0) { clearInterval(timerInterval); timeOutRound(); }
   }, 1000);
 }
 
@@ -965,64 +834,48 @@ function timeOutRound() {
   roundActive = false;
   const winner = p1.hp >= p2.hp ? 1 : 2;
   showAnnounce('TIME!', `Player ${winner} wins by HP`, 2000);
-  roundWins[winner]++;
-  updateRoundPips();
-  checkMatchEnd(winner);
+  roundWins[winner]++; updateRoundPips(); checkMatchEnd(winner);
 }
 
 function endRound(winnerId) {
   if (!roundActive) return;
   roundActive = false;
   clearInterval(timerInterval);
-  roundWins[winnerId]++;
-  updateRoundPips();
-  setTimeout(() => {
-    showAnnounce('K.O.', `Player ${winnerId} wins!`, 2000);
-    checkMatchEnd(winnerId);
-  }, 400);
+  roundWins[winnerId]++; updateRoundPips();
+  setTimeout(() => { showAnnounce('K.O.', `Player ${winnerId} wins!`, 2000); checkMatchEnd(winnerId); }, 400);
 }
 
 function updateRoundPips() {
-  for (let pid = 1; pid <= 2; pid++) {
+  for (let pid = 1; pid <= 2; pid++)
     for (let w = 0; w < 2; w++) {
       const pip = document.getElementById(`p${pid}-pip-${w}`);
       if (pip) pip.classList.toggle('won', w < roundWins[pid]);
     }
-  }
 }
 
 function checkMatchEnd(lastWinner) {
   const needed = Math.ceil(maxRounds / 2);
   if (roundWins[lastWinner] >= needed) {
     gameOver = true;
-    setTimeout(() => {
-      showAnnounce(`P${lastWinner} WINS!`, 'Press SPACE to restart', 99999);
-    }, 2200);
+    setTimeout(() => showAnnounce(`P${lastWinner} WINS!`, 'Press SPACE to restart', 99999), 2200);
     const restartHandler = (e) => {
       if (e.code === 'Space' || e.code === 'Enter') {
-        window.removeEventListener('keydown', restartHandler);
-        location.reload();
+        window.removeEventListener('keydown', restartHandler); location.reload();
       }
     };
     window.addEventListener('keydown', restartHandler);
   } else {
-    // Next round
-    setTimeout(() => {
-      resetFighters();
-      startRound(round + 1);
-    }, 2500);
+    setTimeout(() => { resetFighters(); startRound(round + 1); }, 2500);
   }
 }
 
 function resetFighters() {
   [p1, p2].forEach((f, i) => {
-    f.hp = f.maxHp;
-    f.stamina = f.maxStamina;
-    f.combo = 0;
-    f.state = STATES.IDLE;
-    f.stateTime = 0;
-    f.body.position.set(i === 0 ? -5 : 5, 3, 0);
-    f.body.velocity.set(0, 0, 0);
+    f.hp = f.maxHp; f.stamina = f.maxStamina; f.combo = 0;
+    f.state = STATES.IDLE; f.stateTime = 0;
+    f.pos.set(i === 0 ? -5 : 5, FLOOR_LEVEL, 0);
+    f.vel.set(0, 0, 0);
+    f.isGrounded = true;
     f.root.rotation.set(0, 0, 0);
     f.root.position.set(0, 0, 0);
   });
@@ -1032,26 +885,28 @@ function resetFighters() {
   document.getElementById('st2-fill').style.width = '100%';
 }
 
-// ── MAIN LOOP ────────────────────────────────────────────────
+// ── LOOP ──────────────────────────────────────────────────────
 let lastTime = 0;
 function animate(ts) {
   requestAnimationFrame(animate);
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  world.step(1 / 60, dt, 3);
-
   if (roundActive && !gameOver) {
     p1.applyControl(getInput(1));
     p2.applyControl(getInput(2));
-    checkCombat();
   }
+
+  // Física manual para ambos
+  p1.physicsStep(dt);
+  p2.physicsStep(dt);
+
+  if (roundActive && !gameOver) checkCombat();
 
   p1.animate(dt);
   p2.animate(dt);
   updateParticles(dt);
 
-  // Combo fade
   if (comboFadeTimer > 0) {
     comboFadeTimer -= dt;
     if (comboFadeTimer <= 0) {
@@ -1061,17 +916,15 @@ function animate(ts) {
     }
   }
 
-  // Dynamic camera
-  const midX = (p1.body.position.x + p2.body.position.x) / 2;
-  const dist = Math.abs(p1.body.position.x - p2.body.position.x);
+  // Câmera dinâmica
+  const midX = (p1.pos.x + p2.pos.x) / 2;
+  const dist  = Math.abs(p1.pos.x - p2.pos.x);
   const targetZ = Math.max(14, Math.min(26, dist * 1.4 + 10));
   const targetY = 4 + dist * 0.1;
-
-  camera.position.x += (midX - camera.position.x) * 0.08;
+  camera.position.x += (midX   - camera.position.x) * 0.08;
   camera.position.z += (targetZ - camera.position.z) * 0.05;
   camera.position.y += (targetY - camera.position.y) * 0.05;
 
-  // Screen shake
   if (shakeCamera > 0) {
     camera.position.x += (Math.random() - 0.5) * shakeCamera;
     camera.position.y += (Math.random() - 0.5) * shakeCamera * 0.5;
@@ -1080,14 +933,12 @@ function animate(ts) {
 
   camera.lookAt(midX, 1.5, 0);
 
-  // Rim light subtle flicker on hit
   rimL.intensity = 3 + Math.sin(ts * 0.01) * 0.3;
   rimR.intensity = 3 + Math.cos(ts * 0.013) * 0.3;
 
   renderer.render(scene, camera);
 }
 
-// ── BOOT ────────────────────────────────────────────────────
 startRound(1);
 animate(0);
 </script>
