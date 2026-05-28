@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Arena - 2 Controllers Edition</title>
+    <title>3D Fighter - Full Body Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         #ui { position: absolute; width: 100%; display: flex; justify-content: space-around; padding: 20px; box-sizing: border-box; pointer-events: none; }
-        .hp-container { width: 350px; background: rgba(0,0,0,0.5); border: 2px solid #fff; padding: 5px; }
-        .hp-bar { height: 30px; background: #00ff00; width: 100%; transition: width 0.1s; }
-        #msg { position: absolute; top: 50%; width: 100%; text-align: center; color: white; font-size: 60px; display: none; font-weight: bold; text-shadow: 4px 4px #000; }
+        .hp-container { width: 350px; background: rgba(0,0,0,0.7); border: 2px solid #fff; padding: 5px; border-radius: 10px; }
+        .hp-bar { height: 20px; background: #00ff00; width: 100%; transition: width 0.2s; border-radius: 5px; }
+        #msg { position: absolute; top: 40%; width: 100%; text-align: center; color: white; font-size: 50px; display: none; text-shadow: 0 0 20px #ff0000; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="ui">
         <div class="hp-container">
-            <div style="color: #0f0; margin-bottom: 5px;">P1: TECLADO / CONTROLE 1</div>
+            <div style="color: #0f0; margin-bottom: 5px;">P1 (WASD/Controle 1)</div>
             <div class="hp-bar" id="hp1"></div>
         </div>
         <div class="hp-container">
-            <div style="color: #f00; margin-bottom: 5px; text-align: right;">P2: CONTROLE 2</div>
+            <div style="color: #f00; margin-bottom: 5px; text-align: right;">P2 (Controle 2)</div>
             <div class="hp-bar" id="hp2" style="background: #ff0000; float: right;"></div>
         </div>
     </div>
-    <div id="msg">VITORIA!</div>
+    <div id="msg">VITÓRIA!</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
@@ -37,14 +37,14 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Chão (Arena)
-        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(12, 0.5, 8)) });
-        world.addBody(groundBody);
-        const groundMesh = new THREE.Mesh(new THREE.BoxGeometry(24, 1, 16), new THREE.MeshPhongMaterial({ color: 0x444444 }));
+        // Cenário
+        const groundMesh = new THREE.Mesh(new THREE.BoxGeometry(24, 1, 12), new THREE.MeshPhongMaterial({ color: 0x222222 }));
         scene.add(groundMesh);
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(12, 0.5, 6)) });
+        world.addBody(groundBody);
 
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 15, 10);
+        const light = new THREE.PointLight(0xffffff, 1.5, 100);
+        light.position.set(0, 15, 10);
         scene.add(light);
         scene.add(new THREE.AmbientLight(0x404040));
 
@@ -52,100 +52,132 @@
             constructor(x, color, id) {
                 this.id = id;
                 this.hp = 100;
-                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 1), new THREE.MeshPhongMaterial({ color }));
-                scene.add(this.mesh);
-                this.body = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(0.75, 1.25, 0.5)), position: new CANNON.Vec3(x, 5, 0), fixedRotation: true });
+                this.group = new THREE.Group();
+                
+                // Materiais
+                const mat = new THREE.MeshPhongMaterial({ color });
+                const skinMat = new THREE.MeshPhongMaterial({ color: 0xffdbac });
+
+                // Tronco
+                this.torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.5), mat);
+                this.group.add(this.torso);
+
+                // Cabeça
+                this.head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), skinMat);
+                this.head.position.y = 1;
+                this.group.add(this.head);
+
+                // Membros (Criando pivots para rotação)
+                this.arms = { l: this.createLimb(0.3, 0.8, mat, [0.7, 0.2, 0]), r: this.createLimb(0.3, 0.8, mat, [-0.7, 0.2, 0]) };
+                this.legs = { l: this.createLimb(0.4, 1, mat, [0.3, -1, 0]), r: this.createLimb(0.4, 1, mat, [-0.3, -1, 0]) };
+
+                scene.add(this.group);
+
+                // Física (Cápsula de colisão simples)
+                this.body = new CANNON.Body({ 
+                    mass: 1, 
+                    shape: new CANNON.Box(new CANNON.Vec3(0.6, 1.3, 0.4)), 
+                    position: new CANNON.Vec3(x, 5, 0),
+                    fixedRotation: true 
+                });
                 world.addBody(this.body);
             }
-            update() {
-                this.mesh.position.copy(this.body.position);
-                if (this.body.position.y < -10 && this.hp > 0) this.die();
+
+            createLimb(w, h, mat, pos) {
+                const limb = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), mat);
+                limb.position.set(...pos);
+                this.group.add(limb);
+                return limb;
             }
+
+            update(time) {
+                this.group.position.copy(this.body.position);
+                
+                // Animação de caminhada se estiver se movendo horizontalmente
+                if (Math.abs(this.body.velocity.x) > 1) {
+                    const speed = 10;
+                    const angle = Math.sin(time * speed) * 0.5;
+                    this.legs.l.rotation.x = angle;
+                    this.legs.r.rotation.x = -angle;
+                    this.arms.l.rotation.x = -angle;
+                    this.arms.r.rotation.x = angle;
+                } else {
+                    this.legs.l.rotation.x = this.legs.r.rotation.x = 0;
+                    this.arms.l.rotation.x = this.arms.r.rotation.x = 0;
+                }
+
+                if (this.body.position.y < -8) this.die();
+            }
+
             die() {
                 this.hp = 0;
-                updateUI();
-                showWinner(this.id === 1 ? "PLAYER 2" : "PLAYER 1");
+                document.getElementById(`hp${this.id}`).style.width = "0%";
+                document.getElementById('msg').style.display = 'block';
+                document.getElementById('msg').innerText = `JOGADOR ${this.id === 1 ? 2 : 1} VENCEU!`;
+                setTimeout(() => location.reload(), 3000);
             }
         }
 
-        const p1 = new Fighter(-6, 0x00ff00, 1);
-        const p2 = new Fighter(6, 0xff0000, 2);
+        const p1 = new Fighter(-5, 0x00ff00, 1);
+        const p2 = new Fighter(5, 0xff0000, 2);
 
         const keys = {};
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
 
-        function handleInputs() {
+        function handleBattle() {
             const gamepads = navigator.getGamepads();
-            const speed = 12;
-            const jumpForce = 13;
+            const speed = 10;
 
-            // --- CONTROLES PLAYER 1 (Teclado ou Gamepad 0) ---
+            // Player 1
             p1.body.velocity.x = 0;
-            if (keys['ArrowLeft'] || keys['KeyA']) p1.body.velocity.x = -speed;
-            if (keys['ArrowRight'] || keys['KeyD']) p1.body.velocity.x = speed;
-            if ((keys['Space'] || keys['KeyW']) && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = jumpForce;
-
+            if (keys['KeyA']) p1.body.velocity.x = -speed;
+            if (keys['KeyD']) p1.body.velocity.x = speed;
+            if (keys['KeyW'] && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = 12;
+            
             const gp1 = gamepads[0];
             if (gp1) {
                 if (Math.abs(gp1.axes[0]) > 0.2) p1.body.velocity.x = gp1.axes[0] * speed;
-                if (gp1.buttons[0].pressed && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = jumpForce;
+                if (gp1.buttons[0].pressed && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = 12;
                 if (gp1.buttons[2].pressed) attack(p1, p2);
             }
+            if (keys['Space']) attack(p1, p2);
 
-            // --- CONTROLES PLAYER 2 (Gamepad 1) ---
+            // Player 2
             const gp2 = gamepads[1];
             if (gp2) {
                 p2.body.velocity.x = (Math.abs(gp2.axes[0]) > 0.2) ? gp2.axes[0] * speed : 0;
-                if (gp2.buttons[0].pressed && Math.abs(p2.body.velocity.y) < 0.1) p2.body.velocity.y = jumpForce;
+                if (gp2.buttons[0].pressed && Math.abs(p2.body.velocity.y) < 0.1) p2.body.velocity.y = 12;
                 if (gp2.buttons[2].pressed) attack(p2, p1);
-            } else {
-                // Se não houver segundo controle, P2 fica parado ou você pode mapear outras teclas aqui
-                p2.body.velocity.x = 0;
-            }
-
-            if (keys['ShiftLeft']) attack(p1, p2);
-        }
-
-        function attack(attacker, victim) {
-            const dist = attacker.body.position.distanceTo(victim.body.position);
-            if (dist < 2.8) {
-                victim.hp -= 0.5;
-                updateUI();
-                const dir = (victim.body.position.x - attacker.body.position.x) > 0 ? 1 : -1;
-                victim.body.applyImpulse(new CANNON.Vec3(dir * 3, 2, 0), victim.body.position);
-                if (victim.hp <= 0) victim.die();
             }
         }
 
-        function updateUI() {
-            document.getElementById('hp1').style.width = Math.max(0, p1.hp) + "%";
-            document.getElementById('hp2').style.width = Math.max(0, p2.hp) + "%";
+        function attack(a, v) {
+            if (a.body.position.distanceTo(v.body.position) < 2.5) {
+                v.hp -= 1;
+                document.getElementById(`hp${v.id}`).style.width = v.hp + "%";
+                const side = (v.body.position.x - a.body.position.x) > 0 ? 1 : -1;
+                v.body.applyImpulse(new CANNON.Vec3(side * 2, 2, 0), v.body.position);
+                if (v.hp <= 0) v.die();
+            }
         }
 
-        function showWinner(name) {
-            const m = document.getElementById('msg');
-            m.innerText = name + " VENCEU!";
-            m.style.display = 'block';
-            setTimeout(() => location.reload(), 3000);
-        }
+        camera.position.set(0, 5, 15);
 
-        camera.position.set(0, 6, 18);
-        camera.lookAt(0, 0, 0);
-
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
             world.step(1/60);
-            handleInputs();
-            p1.update();
-            p2.update();
+            handleBattle();
             
-            // Câmera segue os dois
+            const t = time * 0.001;
+            p1.update(t);
+            p2.update(t);
+
             camera.position.x = (p1.body.position.x + p2.body.position.x) / 2;
-            
             renderer.render(scene, camera);
         }
         animate();
+
     </script>
 </body>
 </html>
