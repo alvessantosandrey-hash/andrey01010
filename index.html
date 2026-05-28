@@ -1,28 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Real-Motion Fighter</title>
+    <title>3D Fighter - Face to Face</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Segoe UI', sans-serif; }
-        #hud { position: absolute; width: 100%; display: flex; justify-content: space-around; padding: 30px; box-sizing: border-box; pointer-events: none; }
-        .hp-box { width: 40%; background: rgba(0,0,0,0.6); border: 3px solid #444; height: 35px; border-radius: 20px; overflow: hidden; }
-        .hp-fill { height: 100%; background: linear-gradient(90deg, #ff416c, #ff4b2b); width: 100%; transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #p1-name { color: #00ff88; text-shadow: 0 0 10px #00ff88; font-weight: bold; }
-        #p2-name { color: #ff3333; text-shadow: 0 0 10px #ff3333; font-weight: bold; text-align: right; }
-        #msg { position: absolute; top: 40%; width: 100%; text-align: center; color: white; font-size: 80px; display: none; font-weight: 900; -webkit-text-stroke: 2px black; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial Black', sans-serif; }
+        #hud { position: absolute; width: 100%; display: flex; justify-content: space-around; padding: 25px; box-sizing: border-box; pointer-events: none; }
+        .hp-container { width: 42%; background: rgba(0,0,0,0.8); border: 3px solid #555; height: 30px; position: relative; border-radius: 5px; }
+        .hp-fill { height: 100%; width: 100%; transition: width 0.2s ease-out; }
+        #hp1 { background: #00ff88; float: left; }
+        #hp2 { background: #ff3333; float: right; }
+        #msg { position: absolute; top: 45%; width: 100%; text-align: center; color: #fff; font-size: 70px; display: none; text-shadow: 0 0 15px #f00; }
     </style>
 </head>
 <body>
 
     <div id="hud">
-        <div>
-            <div id="p1-name">PLAYER 1</div>
-            <div class="hp-box"><div id="hp1" class="hp-fill" style="background: #00ff88;"></div></div>
-        </div>
-        <div style="text-align: right;">
-            <div id="p2-name">PLAYER 2</div>
-            <div class="hp-box"><div id="hp2" class="hp-fill"></div></div>
-        </div>
+        <div class="hp-container"><div id="hp1" class="hp-fill"></div></div>
+        <div class="hp-container"><div id="hp2" class="hp-fill"></div></div>
     </div>
     <div id="msg">K.O.</div>
 
@@ -30,125 +24,104 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
     <script>
-        // --- CONFIGURAÇÃO DE CENA ---
         const scene = new THREE.Scene();
         const world = new CANNON.World();
         world.gravity.set(0, -35, 0);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x111111);
         document.body.appendChild(renderer.domElement);
 
-        // Chão e Iluminação
-        const ground = new THREE.Mesh(new THREE.BoxGeometry(30, 2, 15), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 }));
+        // Cenário e Luz
+        const ground = new THREE.Mesh(new THREE.BoxGeometry(30, 2, 10), new THREE.MeshStandardMaterial({ color: 0x151515 }));
         scene.add(ground);
-        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(15, 1, 7.5)) });
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(15, 1, 5)) });
         world.addBody(groundBody);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambient);
-        const spot = new THREE.SpotLight(0xffffff, 1);
-        spot.position.set(0, 20, 10);
-        scene.add(spot);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(5, 15, 10);
+        scene.add(sun);
 
-        // --- CLASSE JOGADOR COM MOVIMENTOS ---
         class Fighter {
             constructor(x, color, id) {
                 this.id = id;
                 this.hp = 100;
-                this.isDefending = false;
                 this.isPunching = false;
-                this.canJump = true;
-                this.punchTime = 0;
+                this.isDefending = false;
+                this.canJump = false;
+                this.punchTimer = 0;
 
                 this.group = new THREE.Group();
                 const mat = new THREE.MeshStandardMaterial({ color });
-                const skin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+                const skin = new THREE.MeshStandardMaterial({ color: 0xffccaa });
 
                 // Corpo
-                this.torso = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.3, 0.5), mat);
+                this.torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.5), mat);
                 this.group.add(this.torso);
                 
                 this.head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), skin);
-                this.head.position.y = 1;
+                this.head.position.y = 0.9;
                 this.group.add(this.head);
 
-                // Pivot dos Braços (para rotação realista)
-                this.armL = new THREE.Group(); this.armL.position.set(0.6, 0.4, 0);
-                this.armR = new THREE.Group(); this.armR.position.set(-0.6, 0.4, 0);
-                
-                const armMesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.3), mat);
-                armMesh.position.y = -0.3; // Desloca para rotar pelo ombro
-                
-                this.armL.add(armMesh.clone());
-                this.armR.add(armMesh.clone());
+                // Braços com pivô no ombro
+                this.armL = this.makeArm(mat, 0.5, 0.3);
+                this.armR = this.makeArm(mat, -0.5, 0.3);
                 this.group.add(this.armL, this.armR);
 
                 // Pernas
-                this.legL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1, 0.35), mat);
-                this.legL.position.set(0.25, -1, 0);
-                this.legR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1, 0.35), mat);
-                this.legR.position.set(-0.25, -1, 0);
+                this.legL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), mat);
+                this.legL.position.set(0.2, -1, 0);
+                this.legR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), mat);
+                this.legR.position.set(-0.2, -1, 0);
                 this.group.add(this.legL, this.legR);
 
                 scene.add(this.group);
 
                 this.body = new CANNON.Body({
-                    mass: 1.5,
+                    mass: 1,
                     shape: new CANNON.Box(new CANNON.Vec3(0.5, 1.2, 0.3)),
-                    position: new CANNON.Vec3(x, 5, 0),
+                    position: new CANNON.Vec3(x, 3, 0),
                     fixedRotation: true
                 });
                 world.addBody(this.body);
 
-                this.body.addEventListener("collide", (e) => {
-                    if (Math.abs(e.contact.ni.y) > 0.5) this.canJump = true;
-                });
+                this.body.addEventListener("collide", () => { this.canJump = true; });
             }
 
-            animate(t) {
+            makeArm(mat, x, y) {
+                const g = new THREE.Group();
+                g.position.set(x, y, 0);
+                const m = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.8, 0.25), mat);
+                m.position.y = -0.3;
+                g.add(m);
+                return g;
+            }
+
+            update(t, targetX) {
                 this.group.position.copy(this.body.position);
-                
-                // Animação de Caminhada
-                const velX = this.body.velocity.x;
-                if (Math.abs(velX) > 1 && !this.isPunching) {
-                    const walkCycle = Math.sin(t * 12) * 0.6;
-                    this.legL.rotation.x = walkCycle;
-                    this.legR.rotation.x = -walkCycle;
-                    this.armL.rotation.x = -walkCycle * 0.5;
-                    this.armR.rotation.x = walkCycle * 0.5;
-                } else if (!this.isPunching && !this.isDefending) {
-                    // Pose Idle
-                    this.legL.rotation.x = this.legR.rotation.x = 0;
-                    this.armL.rotation.x = this.armR.rotation.x = 0.2;
-                }
 
-                // Animação de SOCO (Realista)
+                // --- LÓGICA DE FICAR DE FRENTE ---
+                // Se o inimigo está à direita, rotaciona para a direita, senão para a esquerda
+                const targetRotation = this.body.position.x < targetX ? Math.PI / 2 : -Math.PI / 2;
+                this.group.rotation.y = THREE.MathUtils.lerp(this.group.rotation.y, targetRotation, 0.2);
+
+                // Animações
                 if (this.isPunching) {
-                    this.punchTime += 0.15;
-                    const punchMotion = Math.sin(this.punchTime * Math.PI);
-                    this.armR.rotation.x = -1.5 * punchMotion; // Braço estica para frente
-                    this.armR.position.z = 0.5 * punchMotion;
-                    
-                    if (this.punchTime >= 1) {
-                        this.isPunching = false;
-                        this.punchTime = 0;
-                    }
-                }
-
-                // Animação de DEFESA
-                if (this.isDefending) {
-                    this.armL.rotation.x = -1.2;
-                    this.armR.rotation.x = -1.2;
-                    this.armL.position.z = 0.3;
-                    this.armR.position.z = 0.3;
-                    this.torso.rotation.x = 0.2;
+                    this.punchTimer += 0.15;
+                    const punchEffect = Math.sin(this.punchTimer * Math.PI);
+                    this.armR.rotation.x = -1.8 * punchEffect; // Soco pra frente
+                    if (this.punchTimer >= 1) { this.isPunching = false; this.punchTimer = 0; }
+                } else if (this.isDefending) {
+                    this.armL.rotation.x = this.armR.rotation.x = -1.2; // Guarda alta
                 } else {
-                    this.armL.position.z = 0;
-                    this.armR.position.z = 0;
-                    this.torso.rotation.x = 0;
+                    // Balanço ao andar
+                    const walk = (Math.abs(this.body.velocity.x) > 1) ? Math.sin(t * 12) * 0.5 : 0;
+                    this.legL.rotation.x = walk;
+                    this.legR.rotation.x = -walk;
+                    this.armL.rotation.x = 0.2; 
+                    this.armR.rotation.x = 0.2;
                 }
 
                 if (this.body.position.y < -10) this.die();
@@ -161,81 +134,42 @@
             }
         }
 
-        const p1 = new Fighter(-6, 0x00ff88, 1);
-        const p2 = new Fighter(6, 0xff3333, 2);
+        const p1 = new Fighter(-5, 0x00ff88, 1);
+        const p2 = new Fighter(5, 0xff3333, 2);
 
         const keys = {};
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
 
-        function update() {
-            const gps = navigator.getGamepads();
-            const speed = 10;
-
-            // Player 1
-            const gp1 = gps[0];
-            p1.isDefending = keys['KeyQ'] || (gp1?.buttons[1].pressed);
-            const wantsToPunchP1 = keys['Space'] || (gp1?.buttons[2].pressed);
+        function loop(t) {
+            requestAnimationFrame(loop);
+            world.step(1/60);
             
-            if (wantsToPunchP1 && !p1.isPunching && !p1.isDefending) p1.isPunching = true;
+            const gps = navigator.getGamepads();
+            const speed = 9;
 
+            // Player 1 Input
+            const gp1 = gps[0];
+            p1.isDefending = keys['KeyQ'] || gp1?.buttons[1].pressed;
+            if ((keys['Space'] || gp1?.buttons[2].pressed) && !p1.isPunching && !p1.isDefending) p1.isPunching = true;
+            
             if (!p1.isDefending) {
                 p1.body.velocity.x = (keys['KeyA'] ? -speed : keys['KeyD'] ? speed : (gp1?.axes[0] || 0) * speed);
                 if ((keys['KeyW'] || gp1?.buttons[0].pressed) && p1.canJump && !p1.isPunching) {
-                    p1.body.velocity.y = 16;
-                    p1.canJump = false;
+                    p1.body.velocity.y = 15; p1.canJump = false;
                 }
             } else { p1.body.velocity.x = 0; }
 
-            // Player 2 (Exclusivo Controle ou Teclas de Seta)
+            // Player 2 Input
             const gp2 = gps[1];
-            p2.isDefending = keys['Numpad0'] || (gp2?.buttons[1].pressed);
-            const wantsToPunchP2 = keys['Numpad1'] || (gp2?.buttons[2].pressed);
-
-            if (wantsToPunchP2 && !p2.isPunching && !p2.isDefending) p2.isPunching = true;
+            p2.isDefending = keys['Numpad0'] || gp2?.buttons[1].pressed;
+            if ((keys['Numpad1'] || gp2?.buttons[2].pressed) && !p2.isPunching && !p2.isDefending) p2.isPunching = true;
 
             if (!p2.isDefending) {
                 p2.body.velocity.x = (keys['ArrowLeft'] ? -speed : keys['ArrowRight'] ? speed : (gp2?.axes[0] || 0) * speed);
                 if ((keys['ArrowUp'] || gp2?.buttons[0].pressed) && p2.canJump && !p2.isPunching) {
-                    p2.body.velocity.y = 16;
-                    p2.canJump = false;
+                    p2.body.velocity.y = 15; p2.canJump = false;
                 }
             } else { p2.body.velocity.x = 0; }
 
-            // Detecção de Hit (Apenas no ápice do soco)
-            if (p1.isPunching && p1.punchTime > 0.4 && p1.punchTime < 0.6) checkHit(p1, p2);
-            if (p2.isPunching && p2.punchTime > 0.4 && p2.punchTime < 0.6) checkHit(p2, p1);
-        }
-
-        function checkHit(atk, vic) {
-            const dist = atk.body.position.distanceTo(vic.body.position);
-            if (dist < 2.5 && !vic.isDefending) {
-                vic.hp -= 2;
-                document.getElementById(`hp${vic.id}`).style.width = vic.hp + "%";
-                const knockback = (vic.body.position.x - atk.body.position.x) > 0 ? 5 : -5;
-                vic.body.velocity.x = knockback;
-                vic.body.velocity.y = 5;
-                if (vic.hp <= 0) vic.die();
-            }
-        }
-
-        function animate(t) {
-            requestAnimationFrame(animate);
-            world.step(1/60);
-            update();
-            p1.animate(t * 0.001);
-            p2.animate(t * 0.001);
-            
-            // Câmera dinâmica
-            const midX = (p1.body.position.x + p2.body.position.x) / 2;
-            camera.position.x += (midX - camera.position.x) * 0.1;
-            camera.position.y = 6;
-            camera.position.z = 18;
-            camera.lookAt(midX, 2, 0);
-
-            renderer.render(scene, camera);
-        }
-        animate(0);
-    </script>
-</body>
-</html>
+            // Ataques
