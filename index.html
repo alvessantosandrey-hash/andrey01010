@@ -1,147 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Fighter Extreme</title>
+    <title>3D Fighter - Battle Arena</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; }
-        #overlay { position: absolute; top: 20px; left: 20px; color: #0f0; pointer-events: none; }
-        #controls-hint { position: absolute; bottom: 20px; width: 100%; text-align: center; color: white; }
+        body { margin: 0; overflow: hidden; background: #111; font-family: 'Arial', sans-serif; }
+        #ui { position: absolute; width: 100%; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; pointer-events: none; }
+        .health-bar { width: 300px; height: 25px; background: #440000; border: 2px solid #fff; position: relative; }
+        .health-fill { width: 100%; height: 100%; background: #00ff00; transition: width 0.2s; }
+        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 50px; text-shadow: 2px 2px #ff0000; display: none; }
     </style>
 </head>
 <body>
-    <div id="overlay">
-        <h1>ARENA 3D</h1>
-        <div id="pad-status">CONTROLE: DESCONECTADO</div>
-        <div id="stats">HP: 100 | 100</div>
+
+    <div id="ui">
+        <div>
+            <div style="color: #0f0;">PLAYER 1 (Teclado/P1)</div>
+            <div class="health-bar"><div id="hp1" class="health-fill"></div></div>
+        </div>
+        <div>
+            <div style="color: #f00; text-align: right;">PLAYER 2 (Controle/P2)</div>
+            <div class="health-bar"><div id="hp2" class="health-fill"></div></div>
+        </div>
     </div>
-    <div id="controls-hint">Teclado: Setas + Espaço | Controle: Analógico + Botão A</div>
+    <div id="msg">PLAYER 1 VENCEU!</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
     <script>
-        // --- 1. SETUP DO MUNDO ---
+        // --- SETUP MUNDO ---
         const scene = new THREE.Scene();
+        const world = new CANNON.World();
+        world.gravity.set(0, -20, 0);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const world = new CANNON.World();
-        world.gravity.set(0, -15, 0);
-
-        // --- 2. MATERIAIS E CHÃO ---
-        const groundMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-        const groundGeo = new THREE.BoxGeometry(30, 1, 30);
-        const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-        scene.add(groundMesh);
-
-        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(15, 0.5, 15)) });
+        // --- ARENA ---
+        const groundGeo = new THREE.BoxGeometry(20, 1, 15);
+        const groundMat = new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 100 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        scene.add(ground);
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(10, 0.5, 7.5)) });
         world.addBody(groundBody);
 
-        // Luzes
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 5);
         scene.add(light);
         scene.add(new THREE.AmbientLight(0x404040));
 
-        // --- 3. JOGADORES ---
-        function createPlayer(x, color) {
-            const mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(1.5, 2, 1),
-                new THREE.MeshPhongMaterial({ color: color })
-            );
-            scene.add(mesh);
+        // --- CLASSE JOGADOR ---
+        class Player {
+            constructor(x, color, id) {
+                this.id = id;
+                this.hp = 100;
+                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1), new THREE.MeshPhongMaterial({ color }));
+                scene.add(this.mesh);
 
-            const body = new CANNON.Body({
-                mass: 1,
-                shape: new CANNON.Box(new CANNON.Vec3(0.75, 1, 0.5)),
-                position: new CANNON.Vec3(x, 5, 0),
-                fixedRotation: true // Impede o boneco de capotar
-            });
-            world.addBody(body);
-            return { mesh, body };
+                this.body = new CANNON.Body({
+                    mass: 1,
+                    shape: new CANNON.Box(new CANNON.Vec3(0.6, 1, 0.5)),
+                    position: new CANNON.Vec3(x, 5, 0),
+                    fixedRotation: true
+                });
+                world.addBody(this.body);
+            }
+
+            takeDamage(amt) {
+                this.hp -= amt;
+                document.getElementById(`hp${this.id}`).style.width = Math.max(0, this.hp) + "%";
+                this.mesh.material.emissive.setHex(0xff0000);
+                setTimeout(() => this.mesh.material.emissive.setHex(0x000000), 100);
+            }
         }
 
-        const p1 = createPlayer(-5, 0x00ff00);
-        const p2 = createPlayer(5, 0xff0000); // Inimigo estático (ou p2)
+        const p1 = new Player(-5, 0x00ff00, 1);
+        const p2 = new Player(5, 0xff0000, 2);
 
-        camera.position.set(0, 5, 15);
-        camera.lookAt(0, 0, 0);
-
-        // --- 4. INPUTS (TECLADO + GAMEPAD) ---
+        // --- INPUTS ---
         const keys = {};
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
 
-        let gamepadIdx = null;
-        window.addEventListener("gamepadconnected", (e) => {
-            gamepadIdx = e.gamepad.index;
-            document.getElementById('pad-status').innerText = "CONTROLE: CONECTADO";
-        });
-
-        function updateInput() {
-            const moveSpeed = 8;
-            const jumpForce = 10;
-
-            // Reset Horizontal Velocity
+        function updatePhysics() {
+            const speed = 10;
+            
+            // Player 1: WASD ou Setas
             p1.body.velocity.x = 0;
-            p1.body.velocity.z = 0;
+            if (keys['ArrowLeft'] || keys['KeyA']) p1.body.velocity.x = -speed;
+            if (keys['ArrowRight'] || keys['KeyD']) p1.body.velocity.x = speed;
+            if ((keys['ArrowUp'] || keys['Space']) && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = 12;
 
-            // Teclado
-            if (keys['ArrowLeft']) p1.body.velocity.x = -moveSpeed;
-            if (keys['ArrowRight']) p1.body.velocity.x = moveSpeed;
-            if (keys['Space'] && Math.abs(p1.body.velocity.y) < 0.01) p1.body.velocity.y = jumpForce;
-
-            // Gamepad
-            const gp = navigator.getGamepads()[gamepadIdx];
+            // Player 2: Controle (Gamepad)
+            const gp = navigator.getGamepads()[0];
             if (gp) {
-                // Analógico Esquerdo
-                if (Math.abs(gp.axes[0]) > 0.2) {
-                    p1.body.velocity.x = gp.axes[0] * moveSpeed;
+                p2.body.velocity.x = (Math.abs(gp.axes[0]) > 0.2) ? gp.axes[0] * speed : 0;
+                if (gp.buttons[0].pressed && Math.abs(p2.body.velocity.y) < 0.1) p2.body.velocity.y = 12;
+                
+                // Ataque do Controle (Botão X ou B)
+                if (gp.buttons[2].pressed || gp.buttons[1].pressed) checkHit(p2, p1);
+            }
+
+            // Ataque Player 1 (Tecla Shift ou Enter)
+            if (keys['ShiftLeft'] || keys['Enter']) checkHit(p1, p2);
+
+            // Verificar Queda
+            [p1, p2].forEach(p => {
+                if (p.body.position.y < -5) {
+                    p.takeDamage(100);
+                    gameOver(p.id === 1 ? "PLAYER 2" : "PLAYER 1");
                 }
-                // Botão A (Pulo)
-                if (gp.buttons[0].pressed && Math.abs(p1.body.velocity.y) < 0.01) {
-                    p1.body.velocity.y = jumpForce;
-                }
-                // Botão X (Ataque)
-                if (gp.buttons[2].pressed) {
-                    p1.mesh.scale.set(1.5, 1.5, 1.5); // "Feedback visual de soco"
-                } else {
-                    p1.mesh.scale.set(1, 1, 1);
-                }
+                if (p.hp <= 0) gameOver(p.id === 1 ? "PLAYER 2" : "PLAYER 1");
+            });
+        }
+
+        function checkHit(attacker, victim) {
+            const dist = attacker.body.position.distanceTo(victim.body.position);
+            if (dist < 2.5) {
+                victim.takeDamage(0.5); // Dano por frame de contato no ataque
+                victim.body.applyImpulse(
+                    new CANNON.Vec3(attacker.body.position.x < victim.body.position.x ? 2 : -2, 2, 0),
+                    victim.body.position
+                );
             }
         }
 
-        // --- 5. LOOP PRINCIPAL ---
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            world.step(1/60);
-            updateInput();
-
-            // Atualiza Malhas
-            p1.mesh.position.copy(p1.body.position);
-            p1.mesh.quaternion.copy(p1.body.quaternion);
-            
-            p2.mesh.position.copy(p2.body.position);
-            p2.mesh.quaternion.copy(p2.body.quaternion);
-
-            // Câmera segue os jogadores suavemente
-            const midPoint = (p1.body.position.x + p2.body.position.x) / 2;
-            camera.position.x += (midPoint - camera.position.x) * 0.05;
-
-            renderer.render(scene, camera);
+        function gameOver(winner) {
+            const el = document.getElementById('msg');
+            el.innerHTML = winner + " VENCEU!";
+            el.style.display = 'block';
+            setTimeout(() => location.reload(), 3000);
         }
 
-        animate();
+        // --- LOOP ---
+        camera.position.set(0, 5, 15);
 
-        // Ajuste de tela
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
+        function animate() {
+            requestAnimationFrame(animate);
+            world.step(1/60);
+            updatePhysics();
+
+            p1.mesh.position.copy(p1.body.position);
+            p2.mesh.position.copy(p2.body.position);
+
+            // Câmera dinâmica
+            camera.position.x = (p1.body.position.x + p2.body.position.x) / 2;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
