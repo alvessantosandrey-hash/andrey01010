@@ -1,151 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Fighter - Battle Arena</title>
+    <title>3D Arena - 2 Controllers Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #111; font-family: 'Arial', sans-serif; }
-        #ui { position: absolute; width: 100%; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; pointer-events: none; }
-        .health-bar { width: 300px; height: 25px; background: #440000; border: 2px solid #fff; position: relative; }
-        .health-fill { width: 100%; height: 100%; background: #00ff00; transition: width 0.2s; }
-        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 50px; text-shadow: 2px 2px #ff0000; display: none; }
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        #ui { position: absolute; width: 100%; display: flex; justify-content: space-around; padding: 20px; box-sizing: border-box; pointer-events: none; }
+        .hp-container { width: 350px; background: rgba(0,0,0,0.5); border: 2px solid #fff; padding: 5px; }
+        .hp-bar { height: 30px; background: #00ff00; width: 100%; transition: width 0.1s; }
+        #msg { position: absolute; top: 50%; width: 100%; text-align: center; color: white; font-size: 60px; display: none; font-weight: bold; text-shadow: 4px 4px #000; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <div>
-            <div style="color: #0f0;">PLAYER 1 (Teclado/P1)</div>
-            <div class="health-bar"><div id="hp1" class="health-fill"></div></div>
+        <div class="hp-container">
+            <div style="color: #0f0; margin-bottom: 5px;">P1: TECLADO / CONTROLE 1</div>
+            <div class="hp-bar" id="hp1"></div>
         </div>
-        <div>
-            <div style="color: #f00; text-align: right;">PLAYER 2 (Controle/P2)</div>
-            <div class="health-bar"><div id="hp2" class="health-fill"></div></div>
+        <div class="hp-container">
+            <div style="color: #f00; margin-bottom: 5px; text-align: right;">P2: CONTROLE 2</div>
+            <div class="hp-bar" id="hp2" style="background: #ff0000; float: right;"></div>
         </div>
     </div>
-    <div id="msg">PLAYER 1 VENCEU!</div>
+    <div id="msg">VITORIA!</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
 
     <script>
-        // --- SETUP MUNDO ---
         const scene = new THREE.Scene();
         const world = new CANNON.World();
-        world.gravity.set(0, -20, 0);
+        world.gravity.set(0, -25, 0);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // --- ARENA ---
-        const groundGeo = new THREE.BoxGeometry(20, 1, 15);
-        const groundMat = new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 100 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        scene.add(ground);
-        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(10, 0.5, 7.5)) });
+        // Chão (Arena)
+        const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(12, 0.5, 8)) });
         world.addBody(groundBody);
+        const groundMesh = new THREE.Mesh(new THREE.BoxGeometry(24, 1, 16), new THREE.MeshPhongMaterial({ color: 0x444444 }));
+        scene.add(groundMesh);
 
         const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
+        light.position.set(5, 15, 10);
         scene.add(light);
         scene.add(new THREE.AmbientLight(0x404040));
 
-        // --- CLASSE JOGADOR ---
-        class Player {
+        class Fighter {
             constructor(x, color, id) {
                 this.id = id;
                 this.hp = 100;
-                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 1), new THREE.MeshPhongMaterial({ color }));
+                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 1), new THREE.MeshPhongMaterial({ color }));
                 scene.add(this.mesh);
-
-                this.body = new CANNON.Body({
-                    mass: 1,
-                    shape: new CANNON.Box(new CANNON.Vec3(0.6, 1, 0.5)),
-                    position: new CANNON.Vec3(x, 5, 0),
-                    fixedRotation: true
-                });
+                this.body = new CANNON.Body({ mass: 1, shape: new CANNON.Box(new CANNON.Vec3(0.75, 1.25, 0.5)), position: new CANNON.Vec3(x, 5, 0), fixedRotation: true });
                 world.addBody(this.body);
             }
-
-            takeDamage(amt) {
-                this.hp -= amt;
-                document.getElementById(`hp${this.id}`).style.width = Math.max(0, this.hp) + "%";
-                this.mesh.material.emissive.setHex(0xff0000);
-                setTimeout(() => this.mesh.material.emissive.setHex(0x000000), 100);
+            update() {
+                this.mesh.position.copy(this.body.position);
+                if (this.body.position.y < -10 && this.hp > 0) this.die();
+            }
+            die() {
+                this.hp = 0;
+                updateUI();
+                showWinner(this.id === 1 ? "PLAYER 2" : "PLAYER 1");
             }
         }
 
-        const p1 = new Player(-5, 0x00ff00, 1);
-        const p2 = new Player(5, 0xff0000, 2);
+        const p1 = new Fighter(-6, 0x00ff00, 1);
+        const p2 = new Fighter(6, 0xff0000, 2);
 
-        // --- INPUTS ---
         const keys = {};
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
 
-        function updatePhysics() {
-            const speed = 10;
-            
-            // Player 1: WASD ou Setas
+        function handleInputs() {
+            const gamepads = navigator.getGamepads();
+            const speed = 12;
+            const jumpForce = 13;
+
+            // --- CONTROLES PLAYER 1 (Teclado ou Gamepad 0) ---
             p1.body.velocity.x = 0;
             if (keys['ArrowLeft'] || keys['KeyA']) p1.body.velocity.x = -speed;
             if (keys['ArrowRight'] || keys['KeyD']) p1.body.velocity.x = speed;
-            if ((keys['ArrowUp'] || keys['Space']) && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = 12;
+            if ((keys['Space'] || keys['KeyW']) && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = jumpForce;
 
-            // Player 2: Controle (Gamepad)
-            const gp = navigator.getGamepads()[0];
-            if (gp) {
-                p2.body.velocity.x = (Math.abs(gp.axes[0]) > 0.2) ? gp.axes[0] * speed : 0;
-                if (gp.buttons[0].pressed && Math.abs(p2.body.velocity.y) < 0.1) p2.body.velocity.y = 12;
-                
-                // Ataque do Controle (Botão X ou B)
-                if (gp.buttons[2].pressed || gp.buttons[1].pressed) checkHit(p2, p1);
+            const gp1 = gamepads[0];
+            if (gp1) {
+                if (Math.abs(gp1.axes[0]) > 0.2) p1.body.velocity.x = gp1.axes[0] * speed;
+                if (gp1.buttons[0].pressed && Math.abs(p1.body.velocity.y) < 0.1) p1.body.velocity.y = jumpForce;
+                if (gp1.buttons[2].pressed) attack(p1, p2);
             }
 
-            // Ataque Player 1 (Tecla Shift ou Enter)
-            if (keys['ShiftLeft'] || keys['Enter']) checkHit(p1, p2);
+            // --- CONTROLES PLAYER 2 (Gamepad 1) ---
+            const gp2 = gamepads[1];
+            if (gp2) {
+                p2.body.velocity.x = (Math.abs(gp2.axes[0]) > 0.2) ? gp2.axes[0] * speed : 0;
+                if (gp2.buttons[0].pressed && Math.abs(p2.body.velocity.y) < 0.1) p2.body.velocity.y = jumpForce;
+                if (gp2.buttons[2].pressed) attack(p2, p1);
+            } else {
+                // Se não houver segundo controle, P2 fica parado ou você pode mapear outras teclas aqui
+                p2.body.velocity.x = 0;
+            }
 
-            // Verificar Queda
-            [p1, p2].forEach(p => {
-                if (p.body.position.y < -5) {
-                    p.takeDamage(100);
-                    gameOver(p.id === 1 ? "PLAYER 2" : "PLAYER 1");
-                }
-                if (p.hp <= 0) gameOver(p.id === 1 ? "PLAYER 2" : "PLAYER 1");
-            });
+            if (keys['ShiftLeft']) attack(p1, p2);
         }
 
-        function checkHit(attacker, victim) {
+        function attack(attacker, victim) {
             const dist = attacker.body.position.distanceTo(victim.body.position);
-            if (dist < 2.5) {
-                victim.takeDamage(0.5); // Dano por frame de contato no ataque
-                victim.body.applyImpulse(
-                    new CANNON.Vec3(attacker.body.position.x < victim.body.position.x ? 2 : -2, 2, 0),
-                    victim.body.position
-                );
+            if (dist < 2.8) {
+                victim.hp -= 0.5;
+                updateUI();
+                const dir = (victim.body.position.x - attacker.body.position.x) > 0 ? 1 : -1;
+                victim.body.applyImpulse(new CANNON.Vec3(dir * 3, 2, 0), victim.body.position);
+                if (victim.hp <= 0) victim.die();
             }
         }
 
-        function gameOver(winner) {
-            const el = document.getElementById('msg');
-            el.innerHTML = winner + " VENCEU!";
-            el.style.display = 'block';
+        function updateUI() {
+            document.getElementById('hp1').style.width = Math.max(0, p1.hp) + "%";
+            document.getElementById('hp2').style.width = Math.max(0, p2.hp) + "%";
+        }
+
+        function showWinner(name) {
+            const m = document.getElementById('msg');
+            m.innerText = name + " VENCEU!";
+            m.style.display = 'block';
             setTimeout(() => location.reload(), 3000);
         }
 
-        // --- LOOP ---
-        camera.position.set(0, 5, 15);
+        camera.position.set(0, 6, 18);
+        camera.lookAt(0, 0, 0);
 
         function animate() {
             requestAnimationFrame(animate);
             world.step(1/60);
-            updatePhysics();
-
-            p1.mesh.position.copy(p1.body.position);
-            p2.mesh.position.copy(p2.body.position);
-
-            // Câmera dinâmica
+            handleInputs();
+            p1.update();
+            p2.update();
+            
+            // Câmera segue os dois
             camera.position.x = (p1.body.position.x + p2.body.position.x) / 2;
             
             renderer.render(scene, camera);
