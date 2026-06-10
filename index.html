@@ -7,10 +7,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#fff;}
-
-/* ══════════════════════════════════════════
-   TELA DE SELEÇÃO
-══════════════════════════════════════════ */
 #select-screen{
   position:fixed;inset:0;z-index:100;
   background:radial-gradient(ellipse at 50% 40%,#0d0d2e 0%,#000008 100%);
@@ -18,12 +14,8 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
   overflow:hidden;
 }
 #select-screen.hidden{display:none;}
-
-/* Partículas de fundo do menu */
 #menu-canvas{position:absolute;inset:0;pointer-events:none;z-index:0;}
-
 .select-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;}
-
 .select-title{
   font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,8vw,88px);
   letter-spacing:12px;margin-bottom:4px;
@@ -33,17 +25,12 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
   animation:titlePulse 3s ease-in-out infinite;
 }
 @keyframes titlePulse{0%,100%{filter:drop-shadow(0 0 20px rgba(0,200,255,0.3))}50%{filter:drop-shadow(0 0 50px rgba(0,200,255,0.7))}}
-
 .select-subtitle{font-size:13px;letter-spacing:6px;color:rgba(255,255,255,0.25);margin-bottom:28px;text-transform:uppercase;}
-
 .select-panels{display:flex;gap:clamp(12px,3vw,40px);align-items:flex-start;justify-content:center;width:100%;padding:0 12px;}
-
-/* Preview dos jogadores */
 .select-panel{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:clamp(130px,13vw,170px);}
 .panel-label{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:4px;opacity:0.8;}
 #p1-panel .panel-label{color:#00e5ff;}
 #p2-panel .panel-label{color:#ff6600;}
-
 .preview-box{
   width:100%;aspect-ratio:3/4;
   border-radius:12px;border:1px solid rgba(255,255,255,0.08);
@@ -60,8 +47,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .preview-tag{font-size:10px;letter-spacing:3px;opacity:0.4;text-align:center;}
 .preview-desc{font-size:10px;color:rgba(255,255,255,0.35);text-align:center;padding:0 4px;line-height:1.5;}
 .preview-special{font-size:9px;letter-spacing:1px;opacity:0.45;text-align:center;padding:0 4px;margin-top:2px;}
-
-/* Grade de personagens */
 .grid-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
 .char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .char-card{
@@ -80,13 +65,10 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .char-icon{font-size:clamp(22px,3vw,30px);line-height:1;}
 .char-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(9px,1vw,12px);letter-spacing:1px;text-align:center;color:rgba(255,255,255,0.65);}
 .char-tag{font-size:8px;letter-spacing:1px;opacity:0.35;text-align:center;}
-/* Badge de seleção */
 .char-badge{position:absolute;top:3px;right:4px;font-size:8px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;padding:1px 4px;border-radius:3px;display:none;}
 .char-card.selected-p1 .badge-p1,.char-card.selected-p2 .badge-p2{display:block;}
 .badge-p1{background:#00e5ff;color:#000;}
 .badge-p2{background:#ff6600;color:#000;}
-
-/* VS screen (tela intermédia) */
 #vs-screen{
   position:fixed;inset:0;z-index:200;
   background:#000;
@@ -113,8 +95,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 @keyframes vsPulse{from{text-shadow:0 0 30px #ffd600}to{text-shadow:0 0 60px #ffd600,0 0 100px #ffd600}}
 .vs-bar-p1{width:70%;height:4px;background:linear-gradient(90deg,transparent,#00e5ff);border-radius:2px;}
 .vs-bar-p2{width:70%;height:4px;background:linear-gradient(270deg,transparent,#ff6600);border-radius:2px;}
-
-/* Botões de seleção */
 .hint-row{font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:1px;text-align:center;}
 .start-btn{
   font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:8px;
@@ -128,19 +108,13 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .start-btn:disabled{opacity:0.25;cursor:not-allowed;}
 .start-btn:disabled:hover{color:#ffd600;}
 .start-btn:disabled:hover::before{transform:scaleX(0);}
-
-/* ══════════════════════════════════════════
-   HUD DO JOGO
-══════════════════════════════════════════ */
+/* ══ HUD ══ */
 #canvas-container{position:relative;width:100vw;height:100vh;display:none;}
 #canvas-container.visible{display:block;}
-
 #hud{position:absolute;top:0;left:0;width:100%;z-index:10;padding:14px 20px 0;display:flex;align-items:flex-start;justify-content:space-between;pointer-events:none;}
 .fighter-hud{width:40%;}
 .fighter-hud.right{text-align:right;}
 .fighter-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,2.2vw,26px);letter-spacing:3px;text-shadow:0 0 18px currentColor;margin-bottom:5px;}
-
-/* HP bar dupla: ghost bar por trás */
 .hp-wrap{position:relative;height:20px;margin-bottom:3px;}
 .hp-ghost{position:absolute;inset:0;border-radius:3px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);overflow:hidden;}
 .hp-ghost-fill{height:100%;border-radius:3px;transition:width 1s ease;opacity:0.35;}
@@ -149,13 +123,9 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .hp-fill.low{animation:hpLow 0.6s ease-in-out infinite alternate;}
 @keyframes hpLow{from{filter:brightness(1)}to{filter:brightness(1.6)}}
 .hp-label{font-size:10px;letter-spacing:1px;color:rgba(255,255,255,0.35);margin-bottom:3px;text-transform:uppercase;}
-
-/* Barra de Stamina */
 .stamina-wrap{margin-top:3px;}
 .stamina-label{font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.25);margin-bottom:2px;}
 .stamina-track{height:5px;border-radius:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);overflow:hidden;}
-
-/* Barra de SUPER */
 .super-wrap{margin-top:4px;}
 .super-label{font-size:9px;letter-spacing:1px;margin-bottom:2px;}
 .super-track{height:8px;border-radius:3px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);overflow:hidden;position:relative;}
@@ -165,57 +135,101 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .super-segments{position:absolute;inset:0;display:flex;}
 .super-seg{flex:1;border-right:1px solid rgba(0,0,0,0.4);}
 .super-seg:last-child{border-right:none;}
-
-/* Round pips */
 .round-pips{display:flex;gap:5px;margin-top:6px;}
 .right .round-pips{justify-content:flex-end;}
 .pip{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.04);transition:all 0.3s;}
 .pip.won{background:#ffd600;border-color:#ffd600;box-shadow:0 0 8px #ffd600;}
-
-/* Timer central */
 #timer-box{text-align:center;min-width:72px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px 10px;align-self:center;backdrop-filter:blur(4px);}
 #timer{font-family:'Bebas Neue',sans-serif;font-size:44px;color:#fff;text-shadow:0 0 14px rgba(255,255,255,0.3);line-height:1;}
 #timer.urgent{color:#ff1744;animation:timerUrgent 0.5s ease-in-out infinite alternate;}
 @keyframes timerUrgent{from{text-shadow:0 0 10px #ff1744}to{text-shadow:0 0 30px #ff1744,0 0 60px #ff1744}}
 #round-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:2px;}
-
-/* Combo */
 #combo-display{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;z-index:10;transition:opacity 0.4s;}
 #combo-count{font-family:'Bebas Neue',sans-serif;font-size:80px;line-height:1;text-shadow:0 0 30px currentColor,0 4px 0 rgba(0,0,0,0.8);}
 #combo-label{font-size:11px;letter-spacing:5px;color:rgba(255,255,255,0.4);margin-top:-4px;}
 #combo-hits{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,0.3);}
-
-/* Super Flash overlay */
 #super-flash{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;background:radial-gradient(ellipse at center,rgba(255,220,0,0.3),transparent 70%);}
 
-/* Damage popup */
+/* ══ SUPER CINEMATIC OVERLAY ══ */
+#super-cinematic{
+  position:absolute;inset:0;pointer-events:none;z-index:25;
+  display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+}
+#super-cinematic.active{display:flex;}
+/* Letterbox bars */
+#super-cinematic::before,
+#super-cinematic::after{
+  content:'';position:absolute;left:0;right:0;height:0;background:#000;
+  transition:height 0.18s ease-out;
+}
+#super-cinematic::before{top:0;}
+#super-cinematic::after{bottom:0;}
+#super-cinematic.bars::before,
+#super-cinematic.bars::after{height:14%;}
+/* Fundo de energia radial */
+#super-energy-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(255,200,0,0.18) 0%,transparent 70%);
+  opacity:0;transition:opacity 0.2s;
+}
+#super-cinematic.active #super-energy-bg{opacity:1;}
+/* Nome do super */
+#super-name-overlay{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(52px,9vw,110px);
+  letter-spacing:10px;
+  color:#fff;
+  text-shadow:0 0 40px currentColor;
+  opacity:0;
+  transform:scale(1.8) skewX(-8deg);
+  transition:all 0s;
+  position:relative;z-index:2;
+  text-align:center;
+  pointer-events:none;
+}
+#super-name-overlay.pop{
+  opacity:1;
+  transform:scale(1) skewX(0deg);
+  transition:opacity 0.12s ease-out, transform 0.12s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+#super-name-overlay.fade{
+  opacity:0;
+  transform:scale(0.85) skewX(4deg);
+  transition:opacity 0.25s ease-in, transform 0.25s ease-in;
+}
+/* Scan lines durante o super */
+#super-scanlines{
+  position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  opacity:0;transition:opacity 0.2s;
+}
+#super-cinematic.active #super-scanlines{opacity:1;}
+/* Barras laterais de energia */
+.super-side-bar{
+  position:absolute;top:14%;bottom:14%;width:4px;
+  background:linear-gradient(180deg,transparent,#ffd600,transparent);
+  opacity:0;transition:opacity 0.15s;
+}
+.super-side-bar.left{left:0;}
+.super-side-bar.right{right:0;}
+#super-cinematic.active .super-side-bar{opacity:1;}
+
 .dmg-popup{position:absolute;pointer-events:none;z-index:20;font-family:'Bebas Neue',sans-serif;text-shadow:2px 2px 0 rgba(0,0,0,0.9);animation:popDmg 0.9s ease forwards;}
 @keyframes popDmg{0%{transform:translateY(0) scale(1.5) rotate(-5deg);opacity:1}80%{opacity:1}100%{transform:translateY(-70px) scale(0.7) rotate(3deg);opacity:0}}
-
-/* Mensagens */
 #msg{position:absolute;top:36%;width:100%;text-align:center;pointer-events:none;z-index:30;display:none;}
 #msg-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(60px,12vw,130px);color:#fff;letter-spacing:8px;animation:msgPop 0.45s cubic-bezier(0.175,0.885,0.32,1.275) both;}
 #msg-sub{font-size:16px;letter-spacing:6px;color:rgba(255,255,255,0.45);margin-top:6px;}
 @keyframes msgPop{0%{transform:scale(0.2) skewX(-15deg);opacity:0}100%{transform:scale(1) skewX(0);opacity:1}}
 #round-announce{position:absolute;top:40%;width:100%;text-align:center;pointer-events:none;z-index:30;display:none;}
 #round-announce-text{font-family:'Bebas Neue',sans-serif;font-size:86px;color:#ffd600;text-shadow:0 0 40px #ffd600;letter-spacing:4px;animation:msgPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;}
-
-/* HIT FLASH */
 #hit-flash{position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;mix-blend-mode:screen;}
-
-/* Controles */
 #controls{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none;z-index:10;}
 .ctrl-box{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.07);border-radius:6px;padding:7px 10px;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.75;backdrop-filter:blur(4px);}
 .ctrl-key{display:inline-block;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:3px;padding:0 4px;font-size:9px;color:rgba(255,255,255,0.45);}
-
-/* DASH indicator */
 .dash-cd{font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.2);margin-top:2px;height:10px;}
-
-/* Back btn */
 #back-btn{position:absolute;top:12px;right:12px;z-index:50;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;padding:5px 14px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.4);cursor:pointer;border-radius:4px;backdrop-filter:blur(4px);}
 #back-btn:hover{border-color:rgba(255,255,255,0.5);color:#fff;}
-
-/* Tela de fim de jogo */
 #winner-screen{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);}
 #winner-screen.show{display:flex;}
 .winner-icon{font-size:100px;animation:vsFloat 1.5s ease-in-out infinite;margin-bottom:10px;}
@@ -227,17 +241,12 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 </style>
 </head>
 <body>
-
-<!-- ══════════════════════════════
-     TELA DE SELEÇÃO
-══════════════════════════════ -->
 <div id="select-screen">
   <canvas id="menu-canvas"></canvas>
   <div class="select-content">
     <div class="select-title">IRON FIST 3D</div>
     <div class="select-subtitle">Escolha seu guerreiro</div>
     <div class="select-panels">
-
       <div class="select-panel" id="p1-panel">
         <div class="panel-label">⬡ JOGADOR 1</div>
         <div class="preview-box" id="p1-preview">
@@ -249,13 +258,11 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
         </div>
         <div style="font-size:10px;color:rgba(0,229,255,0.4);letter-spacing:2px;">WASD + SPACE/V/Q/E</div>
       </div>
-
       <div class="grid-wrap">
         <div class="char-grid" id="char-grid"></div>
         <div class="hint-row">ESQUERDO = P1 &nbsp;|&nbsp; DIREITO = P2</div>
         <button class="start-btn" id="start-btn" disabled>⚔ LUTAR</button>
       </div>
-
       <div class="select-panel" id="p2-panel">
         <div class="panel-label">JOGADOR 2 ⬡</div>
         <div class="preview-box" id="p2-preview">
@@ -267,14 +274,9 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
         </div>
         <div style="font-size:10px;color:rgba(255,102,0,0.4);letter-spacing:2px;">↑←→ + L/./P/O</div>
       </div>
-
     </div>
   </div>
 </div>
-
-<!-- ══════════════════════════════
-     VS SCREEN
-══════════════════════════════ -->
 <div id="vs-screen">
   <div class="vs-left" id="vs-left">
     <div class="vs-bar-p1"></div>
@@ -292,17 +294,21 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div class="vs-bar-p2"></div>
   </div>
 </div>
-
-<!-- ══════════════════════════════
-     JOGO
-══════════════════════════════ -->
 <div id="canvas-container">
   <div id="hit-flash"></div>
   <div id="super-flash"></div>
-  <button id="back-btn">← MENU</button>
 
+  <!-- SUPER CINEMATIC OVERLAY -->
+  <div id="super-cinematic">
+    <div id="super-energy-bg"></div>
+    <div id="super-scanlines"></div>
+    <div class="super-side-bar left"></div>
+    <div class="super-side-bar right"></div>
+    <div id="super-name-overlay">SUPER</div>
+  </div>
+
+  <button id="back-btn">← MENU</button>
   <div id="hud">
-    <!-- P1 -->
     <div class="fighter-hud">
       <div class="fighter-name" id="p1-name">P1</div>
       <div class="hp-label">HP</div>
@@ -323,10 +329,7 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
       </div>
       <div class="round-pips"><div class="pip" id="p1-pip-0"></div><div class="pip" id="p1-pip-1"></div></div>
     </div>
-
     <div id="timer-box"><div id="round-label">ROUND</div><div id="timer">99</div></div>
-
-    <!-- P2 -->
     <div class="fighter-hud right">
       <div class="fighter-name" id="p2-name">P2</div>
       <div class="hp-label" style="text-align:right">HP</div>
@@ -348,16 +351,13 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
       <div class="round-pips right"><div class="pip" id="p2-pip-0"></div><div class="pip" id="p2-pip-1"></div></div>
     </div>
   </div>
-
   <div id="combo-display" style="opacity:0">
     <div id="combo-count" style="color:#ffd600">0</div>
     <div id="combo-label">COMBO</div>
     <div id="combo-hits"></div>
   </div>
-
   <div id="msg"><div id="msg-text">K.O.</div><div id="msg-sub"></div></div>
   <div id="round-announce"><div id="round-announce-text">ROUND 1</div></div>
-
   <div id="winner-screen">
     <div class="winner-icon" id="winner-icon">🏆</div>
     <div class="winner-title" id="winner-title">PLAYER 1 WINS</div>
@@ -365,7 +365,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div class="winner-score" id="winner-score"></div>
     <button class="winner-restart" onclick="location.reload()">↺ JOGAR NOVAMENTE</button>
   </div>
-
   <div id="controls">
     <div class="ctrl-box">
       <span class="ctrl-key">W</span> Pular &nbsp;<span class="ctrl-key">A</span><span class="ctrl-key">D</span> Mover &nbsp;<span class="ctrl-key">A+A</span> Dash<br>
@@ -379,7 +378,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     </div>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ════════════════════════════════════════════════════════
@@ -388,6 +386,7 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 const CHARACTERS = [
   { id:'water',    name:'MARÉ',      icon:'💧', tag:'ÁGUA',
     desc:'Ondas que empurram e afogam o inimigo.',
+    superName:'TSUNAMI',
     color:0x1565c0, skinColor:0xffdbac, c1:0x00ccff, c2:0x0044ff,
     emissive:0x003366, darkColor:0x001a33, shoeColor:0x003355,
     particleRise:false, particleGrav:0.4,
@@ -399,6 +398,7 @@ const CHARACTERS = [
     specialDesc:'Esfera de água',superDesc:'Tsunami devastador' },
   { id:'fire',     name:'BRASA',     icon:'🔥', tag:'FOGO',
     desc:'Chamas que queimam e lançam para o ar.',
+    superName:'ERUPÇÃO',
     color:0xb71c1c, skinColor:0xffdbac, c1:0xff6600, c2:0xffdd00,
     emissive:0x330800, darkColor:0x1a0500, shoeColor:0x220800,
     particleRise:true, particleGrav:-0.08,
@@ -410,6 +410,7 @@ const CHARACTERS = [
     specialDesc:'Bola de fogo', superDesc:'Erupção vulcânica' },
   { id:'thunder',  name:'RELÂMPAGO', icon:'⚡', tag:'RAIO',
     desc:'Velocidade elétrica e golpes devastadores.',
+    superName:'TEMPESTADE',
     color:0x4a0080, skinColor:0xffd9b3, c1:0xffee00, c2:0xaa44ff,
     emissive:0x1a0040, darkColor:0x1a0040, shoeColor:0x2a0060,
     particleRise:false, particleGrav:0.0,
@@ -421,6 +422,7 @@ const CHARACTERS = [
     specialDesc:'Relâmpago em linha reta', superDesc:'Tempestade elétrica' },
   { id:'nature',   name:'FLORA',     icon:'🌿', tag:'NATUREZA',
     desc:'Raízes e espinhos que envenenam.',
+    superName:'FLORESTA',
     color:0x1b5e20, skinColor:0xc8a26e, c1:0x00e676, c2:0x33691e,
     emissive:0x0a2010, darkColor:0x0d2b0d, shoeColor:0x1a3a1a,
     particleRise:false, particleGrav:0.15,
@@ -432,6 +434,7 @@ const CHARACTERS = [
     specialDesc:'Espinho venenoso', superDesc:'Floresta devastadora' },
   { id:'darkness', name:'SOMBRA',    icon:'🌑', tag:'ESCURIDÃO',
     desc:'Trevas que drenam vida e confundem.',
+    superName:'COLAPSO',
     color:0x0d0d0d, skinColor:0x888888, c1:0x7700cc, c2:0x220033,
     emissive:0x110022, darkColor:0x0a000f, shoeColor:0x0d000d,
     particleRise:false, particleGrav:0.05,
@@ -443,6 +446,7 @@ const CHARACTERS = [
     specialDesc:'Projétil de escuridão', superDesc:'Colapso dimensional' },
   { id:'rubber',   name:'ELÁSTICO',  icon:'🟠', tag:'BORRACHA',
     desc:'Corpo elástico que absorve e rebate dano.',
+    superName:'ESTIRAMENTO',
     color:0xe65100, skinColor:0xffcc80, c1:0xff9100, c2:0xffea00,
     emissive:0x2a1000, darkColor:0x2a1000, shoeColor:0x3a1500,
     particleRise:false, particleGrav:0.3,
@@ -454,6 +458,7 @@ const CHARACTERS = [
     specialDesc:'Soco elástico longo', superDesc:'Giro elástico total' },
   { id:'space',    name:'COSMOS',    icon:'🌌', tag:'ESPAÇO',
     desc:'Gravidade e buracos negros distorcem tudo.',
+    superName:'BURACO NEGRO',
     color:0x0a0a2e, skinColor:0xd0d0ff, c1:0x00b0ff, c2:0xaa00ff,
     emissive:0x05052a, darkColor:0x05052a, shoeColor:0x080820,
     particleRise:true, particleGrav:-0.1,
@@ -465,6 +470,7 @@ const CHARACTERS = [
     specialDesc:'Singularidade gravitacional', superDesc:'Buraco negro' },
   { id:'wood',     name:'MADEIRA',   icon:'🪵', tag:'MADEIRA',
     desc:'Força bruta com armadura de casca de árvore.',
+    superName:'ESPINHEIRO',
     color:0x4e342e, skinColor:0xd4a574, c1:0xa1887f, c2:0x5d4037,
     emissive:0x1a0d00, darkColor:0x1a0d00, shoeColor:0x2a1400,
     particleRise:false, particleGrav:0.5,
@@ -476,6 +482,7 @@ const CHARACTERS = [
     specialDesc:'Estaca de madeira', superDesc:'Floresta de espinhos' },
   { id:'tech',     name:'NEXUS',     icon:'🤖', tag:'TECNOLOGIA',
     desc:'Laser, drones e precisão cirúrgica.',
+    superName:'BOMBARDEIO',
     color:0x263238, skinColor:0xb0bec5, c1:0x00e5ff, c2:0xffd600,
     emissive:0x0a1a1f, darkColor:0x0d1a1f, shoeColor:0x102030,
     particleRise:false, particleGrav:0.0,
@@ -488,7 +495,75 @@ const CHARACTERS = [
 ];
 
 // ════════════════════════════════════════════════════════
-//  MENU — partículas animadas de fundo
+//  SUPER CINEMATIC
+// ════════════════════════════════════════════════════════
+let superCinematicActive = false;
+
+function playSuperCinematic(fighter, onFireCallback) {
+  if (superCinematicActive) { if(onFireCallback) onFireCallback(); return; }
+  superCinematicActive = true;
+
+  const overlay = document.getElementById('super-cinematic');
+  const nameEl  = document.getElementById('super-name-overlay');
+
+  // Cor do personagem
+  const hexColor = '#' + fighter.ch.c1.toString(16).padStart(6,'0');
+  nameEl.style.color = hexColor;
+  nameEl.style.textShadow = `0 0 60px ${hexColor}, 0 0 100px ${hexColor}`;
+
+  // Nome do super do personagem
+  nameEl.textContent = (fighter.ch.superName || 'SUPER') + '!';
+
+  // Atualiza cor das barras laterais
+  document.querySelectorAll('.super-side-bar').forEach(b => {
+    b.style.background = `linear-gradient(180deg, transparent, ${hexColor}, transparent)`;
+  });
+
+  // Fundo de energia na cor do personagem
+  document.getElementById('super-energy-bg').style.background =
+    `radial-gradient(ellipse at center, ${hexColor}30 0%, transparent 70%)`;
+
+  // Fase 1 — Ativa overlay + letterbox
+  overlay.classList.remove('bars');
+  nameEl.classList.remove('pop','fade');
+  overlay.style.display = 'flex';
+
+  requestAnimationFrame(() => {
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.add('bars'), 20);
+
+    // Fase 2 — Aparece nome (pop)
+    setTimeout(() => {
+      nameEl.classList.add('pop');
+      // Áudio de super
+      playHit('super');
+    }, 150);
+
+    // Fase 3 — Dispara projétil no pico da animação
+    setTimeout(() => {
+      if (onFireCallback) onFireCallback();
+    }, 380);
+
+    // Fase 4 — Fade do nome
+    setTimeout(() => {
+      nameEl.classList.remove('pop');
+      nameEl.classList.add('fade');
+    }, 600);
+
+    // Fase 5 — Fecha overlay
+    setTimeout(() => {
+      overlay.classList.remove('active','bars');
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        nameEl.classList.remove('fade');
+        superCinematicActive = false;
+      }, 220);
+    }, 820);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  MENU BG
 // ════════════════════════════════════════════════════════
 (function menuBg() {
   const cvs = document.getElementById('menu-canvas');
@@ -515,7 +590,6 @@ const CHARACTERS = [
         ctx.fillStyle=`hsla(${s.hue},100%,70%,${s.op*0.6})`;
         ctx.fill();
       });
-      // Linhas de energia
       for(let i=0;i<3;i++){
         const x=W*(0.2+i*0.3);
         const grad=ctx.createLinearGradient(x,0,x,H);
@@ -532,17 +606,15 @@ const CHARACTERS = [
 })();
 
 // ════════════════════════════════════════════════════════
-//  SELEÇÃO DE PERSONAGEM
+//  SELEÇÃO
 // ════════════════════════════════════════════════════════
 let selected = [null, null];
-
 function buildCharGrid() {
   const grid = document.getElementById('char-grid');
   CHARACTERS.forEach((ch, idx) => {
     const card = document.createElement('div');
     card.className = 'char-card';
     card.dataset.idx = idx;
-    card.style.setProperty('--glow', '#'+ch.c1.toString(16).padStart(6,'0'));
     card.innerHTML = `
       <div class="char-badge badge-p1">P1</div>
       <div class="char-badge badge-p2">P2</div>
@@ -554,12 +626,10 @@ function buildCharGrid() {
     grid.appendChild(card);
   });
 }
-
 function selectChar(player, idx) {
   selected[player] = idx;
   updateSelectUI();
 }
-
 function updateSelectUI() {
   document.querySelectorAll('.char-card').forEach(card => {
     const idx = +card.dataset.idx;
@@ -570,7 +640,6 @@ function updateSelectUI() {
   updatePreview('p2-preview', selected[1], '#ff6600');
   document.getElementById('start-btn').disabled = (selected[0]===null||selected[1]===null);
 }
-
 function updatePreview(id, idx, color) {
   const box = document.getElementById(id);
   box.classList.toggle('p1-active', id==='p1-preview' && idx!==null);
@@ -590,11 +659,9 @@ function updatePreview(id, idx, color) {
     <div style="font-size:9px;opacity:0.4;text-align:center;margin-top:4px;letter-spacing:1px">⚡ ${ch.specialDesc}</div>
     <div style="font-size:9px;color:#ffd600;opacity:0.6;text-align:center;letter-spacing:1px">★ ${ch.superDesc}</div>`;
 }
-
 buildCharGrid();
 document.getElementById('start-btn').addEventListener('click', showVsScreen);
 
-// ─── VS SCREEN ───────────────────────────────────────────
 function showVsScreen() {
   if (selected[0]===null||selected[1]===null) return;
   const ch1=CHARACTERS[selected[0]], ch2=CHARACTERS[selected[1]];
@@ -610,7 +677,6 @@ function showVsScreen() {
   vs.classList.add('show');
   setTimeout(()=>{ vs.classList.remove('show'); startGame(); }, 2200);
 }
-
 function hexStr(n, a=1){
   const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
   return `rgba(${r},${g},${b},${a})`;
@@ -620,7 +686,9 @@ function hexStr(n, a=1){
 //  ENGINE 3D
 // ════════════════════════════════════════════════════════
 const FLOOR_Y=0, GRAVITY=-38, ARENA_X_MIN=-17, ARENA_X_MAX=17, FIGHTER_GROUND_Y=1.23;
-const MAX_SUPER = 100;
+
+// ── SUPER: máximo reduzido para carregar mais rápido
+const MAX_SUPER = 60; // era 100, agora 60 → carrega ~67% mais rápido
 
 let scene,renderer,camera;
 let p1,p2,sys1,sys2;
@@ -632,7 +700,7 @@ let roundWins={1:0,2:0};
 let comboFadeTimer=0,currentComboOwner=null,shakeCamera=0;
 let lastTime=0;
 
-// ── Web Audio (efeitos sonoros procedurais) ─────────────
+// ── Audio
 let audioCtx = null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
 function playHit(type='punch'){
@@ -653,7 +721,7 @@ function playHit(type='punch'){
   }catch(e){}
 }
 
-// ── Three.js init ────────────────────────────────────────
+// ── Three.js init
 function initThree(){
   scene=new THREE.Scene();
   scene.fog=new THREE.FogExp2(0x080812,0.025);
@@ -671,24 +739,18 @@ function initThree(){
   window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 }
 
-// ── Arena ────────────────────────────────────────────────
 function buildArena(ch1,ch2){
-  // Chão
   const fm=new THREE.MeshStandardMaterial({color:0x0d0d1e,roughness:0.9,metalness:0.1});
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(36,18),fm);
   fl.rotation.x=-Math.PI/2;fl.position.y=FLOOR_Y;fl.receiveShadow=true;scene.add(fl);
-  // Grid bicolor
   const gL=new THREE.GridHelper(18,9,ch1.c1,0x111122);
   gL.position.set(-9,0.01,0);gL.material.opacity=0.22;gL.material.transparent=true;scene.add(gL);
   const gR=new THREE.GridHelper(18,9,ch2.c1,0x111122);
   gR.position.set(9,0.01,0);gR.material.opacity=0.22;gR.material.transparent=true;scene.add(gR);
-  // Linha central
   const lm=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.1});
   const ln=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.02,18),lm);ln.position.set(0,0.02,0);scene.add(ln);
-  // Bordas
   const em=new THREE.MeshBasicMaterial({color:ch1.c1,transparent:true,opacity:0.45});
   [-18,18].forEach(x=>{const e=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.06,18),em);e.position.set(x,0.03,0);scene.add(e);});
-  // Pilares
   const pm=new THREE.MeshStandardMaterial({color:0x0d0d1a,roughness:0.8});
   [-14,-7,0,7,14].forEach(x=>{
     const p=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.5,14,8),pm);
@@ -696,10 +758,8 @@ function buildArena(ch1,ch2){
     const gc=x<0?ch1.c1:(x>0?ch2.c1:0xffffff);
     const g=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.2,8),new THREE.MeshBasicMaterial({color:gc}));
     g.position.set(x,13.1,-8);scene.add(g);
-    // Luz dos pilares
     const pl=new THREE.PointLight(gc,1.2,8);pl.position.set(x,12,-8);scene.add(pl);
   });
-  // Crowd (silhuetas)
   const crowdM=new THREE.MeshBasicMaterial({color:0x0b0b18,side:THREE.DoubleSide});
   for(let i=-15;i<=15;i+=1.2){
     const h=1.5+Math.random()*1.5;
@@ -727,7 +787,7 @@ function buildLights(ch1,ch2){
   });
 }
 
-// ── Partículas ────────────────────────────────────────────
+// ── Partículas
 const MAX_P=600;
 function makeParticleSys(ch){
   const geo=new THREE.BufferGeometry();
@@ -769,7 +829,7 @@ function updateSys(sys,dt){
   sys.mat.color.lerpColors(c1,c2,pulse);
 }
 
-// ── Projéteis ─────────────────────────────────────────────
+// ── Projéteis
 function createProjectile(owner,isSuper=false){
   const ch=owner.ch;
   const scale=isSuper?1.8:1;
@@ -798,19 +858,17 @@ function updateProjectiles(dt){
       const isBlocked=target.state===STATES.BLOCK&&target.stamina>0;
       const fd=isBlocked?pr.dmg*0.1:pr.dmg;
       target.hp=Math.max(0,target.hp-fd);
-      // Ghost HP delay
       scheduleGhostHp(target);
       if(!isBlocked){
         target.vel.x=pr.owner.facing*(pr.isSuper?14:10);target.vel.y=pr.isSuper?10:7;
         target.isGrounded=false;target.setState(STATES.HURT,true);
         pr.owner.combo++;currentComboOwner=pr.owner.id;comboFadeTimer=2.5;updateComboHUD(pr.owner.combo);
-        // Super meter gain for attacker
         pr.owner.superMeter=Math.min(MAX_SUPER,pr.owner.superMeter+8);
       }else{target.stamina-=22;target.superMeter=Math.min(MAX_SUPER,target.superMeter+3);}
       spawnP(sys,pr.mesh.position.x,pr.mesh.position.y,pr.mesh.position.z,pr.isSuper?50:28,'hit');
       shakeCamera=pr.isSuper?0.6:0.4;
       flashScreen(isBlocked?0.1:0.3,hexStr(pr.owner.ch.projColor));
-      if(pr.isSuper){superFlash();playHit('super');}else playHit('special');
+      if(pr.isSuper){superFlash();} // playHit já foi chamado no cinematic
       showDmgPopup(pr.mesh.position.clone(),Math.round(fd),isBlocked,pr.isSuper);
       updateHPBar(target);
       if(target.hp<=0&&target.state!==STATES.KO){target.setState(STATES.KO,true);endRound(pr.owner.id);}
@@ -818,7 +876,7 @@ function updateProjectiles(dt){
   }
 }
 
-// ── Ghost HP (barra que atrasa) ───────────────────────────
+// ── Ghost HP
 const ghostTimers={1:null,2:null};
 function scheduleGhostHp(fighter){
   const id=fighter.id;
@@ -833,7 +891,6 @@ function scheduleGhostHp(fighter){
 //  FIGHTER CLASS
 // ════════════════════════════════════════════════════════
 const STATES={IDLE:'idle',WALK:'walk',JUMP:'jump',DASH:'dash',PUNCH:'punch',KICK:'kick',BLOCK:'block',HURT:'hurt',SPECIAL:'special',SUPER:'super',KO:'ko'};
-
 class Fighter{
   constructor({x,ch,id,facing}){
     this.id=id;this.ch=ch;this.facing=facing;
@@ -846,7 +903,6 @@ class Fighter{
     this.pos=new THREE.Vector3(x,FLOOR_Y,0);
     this.vel=new THREE.Vector3(0,0,0);
     this.isGrounded=true;this.opponent=null;
-    // Dash
     this.dashCooldown=0;this.lastDirKey=null;this.lastDirTime=0;
     this._build();
   }
@@ -859,17 +915,11 @@ class Fighter{
     const shoe=new THREE.MeshStandardMaterial({color:ch.shoeColor,roughness:0.4});
     const eyeM=new THREE.MeshBasicMaterial({color:ch.eyeColor});
     const handM=new THREE.MeshBasicMaterial({color:ch.c1});
-
     this.root=new THREE.Group();this.root.position.y=FIGHTER_GROUND_Y;this.group.add(this.root);
-
     this.torso=new THREE.Mesh(new THREE.BoxGeometry(0.95,1.3,0.55),mat);
     this.torso.position.y=0.1;this.torso.castShadow=true;this.root.add(this.torso);
-
-    // Emblema
     this.emblem=new THREE.Mesh(new THREE.CircleGeometry(0.17,8),new THREE.MeshBasicMaterial({color:ch.c1,side:THREE.DoubleSide}));
     this.emblem.position.set(0,0.15,0.28);this.torso.add(this.emblem);
-
-    // Cabeça
     this.head=new THREE.Group();this.head.position.y=1.05;this.root.add(this.head);
     const hm=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.52,0.52),skin);hm.castShadow=true;this.head.add(hm);
     [-0.12,0.12].forEach(ex=>{
@@ -878,11 +928,7 @@ class Fighter{
     });
     this.topMesh=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.38,6),new THREE.MeshBasicMaterial({color:ch.c1}));
     this.topMesh.position.y=0.36;this.head.add(this.topMesh);
-
-    // Cinto
     const belt=new THREE.Mesh(new THREE.BoxGeometry(0.96,0.18,0.56),dark);belt.position.y=-0.58;this.root.add(belt);
-
-    // Braços
     this.armPivotL=new THREE.Group();this.armPivotL.position.set(0.6,0.4,0);
     this.armPivotR=new THREE.Group();this.armPivotR.position.set(-0.6,0.4,0);
     const ua=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.12,0.55,6),mat);ua.position.y=-0.27;
@@ -890,8 +936,6 @@ class Fighter{
     const fi=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),handM);fi.position.y=-1.1;
     [this.armPivotL,this.armPivotR].forEach(a=>{a.add(ua.clone(),la.clone(),fi.clone());a.children.forEach(c=>c.castShadow=true);});
     this.root.add(this.armPivotL,this.armPivotR);
-
-    // Pernas
     this.legPivotL=new THREE.Group();this.legPivotL.position.set(0.26,-0.7,0);
     this.legPivotR=new THREE.Group();this.legPivotR.position.set(-0.26,-0.7,0);
     const th=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.14,0.65,6),dark);th.position.y=-0.33;
@@ -899,60 +943,52 @@ class Fighter{
     const ft=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.14,0.38),shoe);ft.position.set(0,-1.23,0.1);
     [this.legPivotL,this.legPivotR].forEach(l=>{l.add(th.clone(),sh.clone(),ft.clone());l.children.forEach(c=>c.castShadow=true);});
     this.root.add(this.legPivotL,this.legPivotR);
-
-    // Anéis de aura
     this.auraRing=new THREE.Mesh(new THREE.TorusGeometry(0.75,0.04,8,32),new THREE.MeshBasicMaterial({color:ch.ringColor,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending}));
     this.auraRing2=new THREE.Mesh(new THREE.TorusGeometry(0.6,0.03,8,32),new THREE.MeshBasicMaterial({color:ch.ringColor2,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending}));
     this.auraRing.rotation.x=Math.PI/2;this.auraRing2.rotation.z=Math.PI/4;
     this.auraRing.position.y=0.2;this.auraRing2.position.y=0.5;
     this.root.add(this.auraRing,this.auraRing2);
-
-    // Anel do SUPER (aparece quando cheio)
     this.superRing=new THREE.Mesh(new THREE.TorusGeometry(1.1,0.06,8,48),new THREE.MeshBasicMaterial({color:0xffd600,transparent:true,opacity:0,blending:THREE.AdditiveBlending}));
     this.superRing.position.y=0.4;this.root.add(this.superRing);
-
-    // Sombra blob no chão
     const shadowGeo=new THREE.CircleGeometry(0.55,16);shadowGeo.rotateX(-Math.PI/2);
     this.blobShadow=new THREE.Mesh(shadowGeo,new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.45,depthWrite:false}));
     this.blobShadow.position.y=FLOOR_Y+0.005;scene.add(this.blobShadow);
-
-    // Glow no chão
     const gg=new THREE.CircleGeometry(0.7,24);gg.rotateX(-Math.PI/2);
     this.groundGlow=new THREE.Mesh(gg,new THREE.MeshBasicMaterial({color:ch.glowColor,transparent:true,opacity:0.4,depthWrite:false,blending:THREE.AdditiveBlending}));
     this.groundGlow.position.y=FLOOR_Y+0.01;scene.add(this.groundGlow);
     scene.add(this.group);
   }
-
   setState(s,force=false){
     if(!force&&this.state===STATES.KO)return;
     if(this.state!==s){this.state=s;this.stateTime=0;this.specialFired=false;}
   }
-
   applyControl(input){
     if(this.state===STATES.KO||this.state===STATES.HURT)return;
     if(this.opponent)this.facing=this.opponent.pos.x>this.pos.x?1:-1;
     this.dashCooldown=Math.max(0,this.dashCooldown-1/60);
-
-    // Defesa
     if(input.block){this.setState(STATES.BLOCK);this.vel.x*=0.6;this.regenStamina(0.012);return;}
-
-    // SUPER
+    // SUPER — dispara cinemática antes do projétil
     if(input.superKey&&this.superMeter>=MAX_SUPER&&this.state!==STATES.SUPER){
       this.superMeter=0;this.setState(STATES.SUPER);
       updateSuperBar(this);
+      // Cinemática do SUPER com callback para disparar o projétil
+      const self = this;
+      playSuperCinematic(this, () => {
+        // O projétil é disparado durante a cinemática
+        if(!self.specialFired){
+          self.specialFired = true;
+          createProjectile(self, true);
+        }
+        superFlash();
+      });
       return;
     }
-    // Especial
     if(input.special&&this.stamina>=30&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER)
       {this.stamina-=30;this.setState(STATES.SPECIAL);}
-    // Soco
     if(input.punch&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.stamina>=8)
       {this.stamina-=8;this.setState(STATES.PUNCH);}
-    // Chute
     if(input.kick&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.stamina>=10)
       {this.stamina-=10;this.setState(STATES.KICK);}
-
-    // Dash (teclado duplo) — double tap
     const now=performance.now();
     let dashDir=0;
     if(input.left){
@@ -965,7 +1001,6 @@ class Fighter{
     if(dashDir!==0&&this.isGrounded&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER){
       this.vel.x=dashDir*22;this.setState(STATES.DASH);
     }
-
     const spd=9;
     const vx=input.left?-spd:input.right?spd:0;
     if(this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.state!==STATES.DASH){
@@ -978,9 +1013,7 @@ class Fighter{
     }
     if(this.state===STATES.IDLE||this.state===STATES.WALK)this.regenStamina(0.008);
   }
-
   regenStamina(r){this.stamina=Math.min(this.maxStamina,this.stamina+r*60);}
-
   physicsStep(dt){
     if(this.state===STATES.KO)return;
     if(!this.isGrounded)this.vel.y+=GRAVITY*dt;
@@ -989,7 +1022,6 @@ class Fighter{
       this.pos.y=FLOOR_Y;this.vel.y=0;this.isGrounded=true;
       if(this.state===STATES.JUMP||this.state===STATES.DASH)this.setState(STATES.IDLE);
     }else{this.isGrounded=false;}
-    // Push-back entre lutadores (colisão)
     if(this.opponent){
       const dx=this.pos.x-this.opponent.pos.x;
       if(Math.abs(dx)<1.4&&this.state!==STATES.KO&&this.opponent.state!==STATES.KO){
@@ -1003,7 +1035,6 @@ class Fighter{
     if(this.isGrounded&&this.state!==STATES.WALK&&this.state!==STATES.DASH)this.vel.x*=0.72;
     if(this.state===STATES.DASH&&Math.abs(this.vel.x)<3)this.setState(STATES.IDLE);
   }
-
   animate(dt){
     const t=performance.now()*0.001;
     this.stateTime+=dt;this.auraTimer+=dt;
@@ -1012,7 +1043,6 @@ class Fighter{
     if(this.shakeTime>0){this.group.position.x+=(Math.random()-0.5)*0.15;this.shakeTime-=dt;}
     this._pose(dt,t);this._fx(dt,t);
     this.groundGlow.position.set(this.pos.x,FLOOR_Y+0.01,this.pos.z);
-    // Sombra blob escala com altura
     const heightAbove=this.pos.y-FLOOR_Y;
     const shadowScale=Math.max(0.3,1-heightAbove*0.08);
     this.blobShadow.position.set(this.pos.x,FLOOR_Y+0.005,this.pos.z);
@@ -1021,7 +1051,6 @@ class Fighter{
     const lref=this.id===1?p1Light:p2Light;
     lref.position.set(this.pos.x,this.pos.y+FIGHTER_GROUND_Y+0.5,this.pos.z+1.5);
   }
-
   _fx(dt,t){
     const sys=this.id===1?sys1:sys2;
     this.auraRing.rotation.y+=dt*this.ch.auraSpeed;
@@ -1032,38 +1061,31 @@ class Fighter{
     this.auraRing.scale.setScalar(1+pulse*0.07);
     this.emblem.rotation.z+=dt*2;
     this.topMesh.scale.y=1+pulse*0.2;
-
-    // Super ring
     const superRatio=this.superMeter/MAX_SUPER;
     this.superRing.material.opacity=superRatio>0.95?(0.3+pulse*0.5):superRatio*0.2;
     this.superRing.rotation.y+=dt*3;
-
-    // Aura contínua
     if(this.state===STATES.IDLE||this.state===STATES.WALK){
       if(this.auraTimer>0.06){this.auraTimer=0;spawnP(sys,this.pos.x+(Math.random()-0.5)*0.8,this.pos.y+FIGHTER_GROUND_Y*0.5+Math.random()*FIGHTER_GROUND_Y,0,3,'aura');}
     }
     if(this.state===STATES.WALK)spawnP(sys,this.pos.x,this.pos.y+0.1,0,2,'trail');
     if(this.state===STATES.JUMP)spawnP(sys,this.pos.x,this.pos.y+FIGHTER_GROUND_Y*0.3,0,5,'trail');
     if(this.state===STATES.DASH)spawnP(sys,this.pos.x-this.facing*0.5,this.pos.y+FIGHTER_GROUND_Y*0.5,0,8,'trail');
-
     if(this.state===STATES.SPECIAL){
       const s=this.stateTime/0.5;
       if(s<0.5){spawnP(sys,this.pos.x,this.pos.y+FIGHTER_GROUND_Y,0,8,'aura');this.auraRing.scale.setScalar(1.5+s*1.5);}
       if(!this.specialFired&&this.stateTime>=0.25){this.specialFired=true;createProjectile(this,false);}
     }
+    // SUPER: apenas partículas, projétil é disparado pela cinemática
     if(this.state===STATES.SUPER){
       const s=this.stateTime/0.7;
       spawnP(sys,this.pos.x,this.pos.y+FIGHTER_GROUND_Y,0,12,'super');
-      if(!this.specialFired&&this.stateTime>=0.35){this.specialFired=true;createProjectile(this,true);}
     }
-
     const lref=this.id===1?p1Light:p2Light;
     lref.intensity=2+(this.hp/this.maxHp)*4+pulse*1.5;
     this.groundGlow.material.opacity=0.22+pulse*0.2;
     this.groundGlow.scale.setScalar(1+pulse*0.12);
     if(this.state===STATES.KO){this.auraRing.material.opacity*=0.97;this.auraRing2.material.opacity*=0.97;}
   }
-
   _pose(dt,t){
     const la=0.15;
     const setA=(lx,rx,lz=0,rz=0)=>{
@@ -1111,12 +1133,9 @@ class Fighter{
       }
       case STATES.KO:{this.root.rotation.z+=(1.5-this.root.rotation.z)*0.05;this.root.position.y=Math.max(this.root.position.y-0.05,0.2);break;}
     }
-    // Limpa posição z dos braços fora do block
     if(this.state!==STATES.BLOCK){this.armPivotL.position.z*=0.8;this.armPivotR.position.z*=0.8;}
-    // Limpa rotação z do root fora do dash
     if(this.state!==STATES.DASH)this.root.rotation.z*=0.8;
   }
-
   getHitPoint(){return new THREE.Vector3(this.pos.x+this.facing*1.2,this.pos.y+FIGHTER_GROUND_Y+0.3,this.pos.z);}
   getKickPoint(){return new THREE.Vector3(this.pos.x+this.facing*1.3,this.pos.y+FIGHTER_GROUND_Y*0.3,this.pos.z);}
 }
@@ -1125,7 +1144,6 @@ class Fighter{
 //  COMBATE
 // ════════════════════════════════════════════════════════
 const HIT_FRAMES={punch:[0.3,0.6],kick:[0.25,0.55]};
-
 function checkCombat(){
   [[p1,p2],[p2,p1]].forEach(([atk,vic])=>{
     if(atk.hitCooldown>0){atk.hitCooldown-=1/60;return;}
@@ -1145,9 +1163,9 @@ function checkCombat(){
     if(!isBlocked)vic.isGrounded=false;
     vic.shakeTime=0.15;atk.hitCooldown=0.2;
     if(!isBlocked){vic.setState(STATES.HURT,true);vic.combo=0;atk.combo++;}
-    // Super meter
-    atk.superMeter=Math.min(MAX_SUPER,atk.superMeter+(isBlocked?2:5));
-    vic.superMeter=Math.min(MAX_SUPER,vic.superMeter+(isBlocked?3:2));
+    // ── SUPER METER: ganho aumentado para combinar com max menor
+    atk.superMeter=Math.min(MAX_SUPER,atk.superMeter+(isBlocked?3:7));
+    vic.superMeter=Math.min(MAX_SUPER,vic.superMeter+(isBlocked?4:3));
     updateSuperBar(atk);updateSuperBar(vic);
     const sys=atk===p1?sys1:sys2;
     if(hitPoint)spawnP(sys,hitPoint.x,hitPoint.y,hitPoint.z,isBlocked?12:28,'hit');
@@ -1345,7 +1363,6 @@ function gameLoop(ts){
 function startGame(){
   if(selected[0]===null||selected[1]===null)return;
   const ch1=CHARACTERS[selected[0]],ch2=CHARACTERS[selected[1]];
-  // HUD
   document.getElementById('p1-name').textContent=ch1.icon+' '+ch1.name;
   document.getElementById('p1-name').style.color='#'+ch1.c1.toString(16).padStart(6,'0');
   document.getElementById('p2-name').textContent=ch2.name+' '+ch2.icon;
@@ -1356,14 +1373,11 @@ function startGame(){
   document.getElementById('hp2-ghost').style.background=ch2.hpGrad;
   document.getElementById('st1-fill').style.background=ch1.stColor;
   document.getElementById('st2-fill').style.background=ch2.stColor;
-
   round=1;roundWins={1:0,2:0};projectiles=[];comboFadeTimer=0;
-
   document.getElementById('select-screen').classList.add('hidden');
   const cont=document.getElementById('canvas-container');
   cont.classList.add('visible');
   document.getElementById('winner-screen').classList.remove('show');
-
   requestAnimationFrame(()=>{
     initThree();buildArena(ch1,ch2);buildLights(ch1,ch2);
     sys1=makeParticleSys(ch1);sys2=makeParticleSys(ch2);
@@ -1375,8 +1389,8 @@ function startGame(){
     lastTime=0;requestAnimationFrame(gameLoop);startRound(1);
   });
 }
-
 document.getElementById('back-btn').addEventListener('click',()=>location.reload());
 </script>
 </body>
 </html>
+Concluído
