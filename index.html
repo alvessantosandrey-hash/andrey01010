@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/iron_fist_3d.html << 'HEREDOC_END'
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -103,6 +102,12 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 #combo-count{font-family:'Bebas Neue',sans-serif;font-size:76px;line-height:1;text-shadow:0 0 30px currentColor,0 4px 0 rgba(0,0,0,0.8);}
 #combo-label{font-size:10px;letter-spacing:5px;color:rgba(255,255,255,0.4);margin-top:-4px;}
 #combo-hits{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.3);}
+#combo-pattern-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#ffd600;text-shadow:0 0 20px #ffd600;margin-top:8px;animation:comboPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;}
+@keyframes comboPop{0%{transform:scale(0.3) skewX(-20deg);opacity:0}100%{transform:scale(1) skewX(0);opacity:1}}
+#super-combo-display{position:absolute;bottom:140px;right:20px;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s;}
+#super-combo-bar{width:200px;height:12px;background:rgba(255,255,255,0.1);border-radius:6px;border:1px solid rgba(255,102,0,0.3);overflow:hidden;margin-bottom:6px;}
+#super-combo-fill{height:100%;width:0%;background:linear-gradient(90deg,#ff6600,#ffaa00);border-radius:6px;transition:width 0.15s ease;box-shadow:0 0 8px rgba(255,102,0,0.6);}
+#super-combo-label{font-size:10px;letter-spacing:2px;color:#ff6600;text-align:center;}
 #super-flash{position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;background:radial-gradient(ellipse at center,rgba(255,220,0,0.3),transparent 70%);}
 #special-charge{position:absolute;inset:0;pointer-events:none;z-index:7;opacity:0;transition:opacity 0.15s;}
 #special-charge-bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:320px;max-width:60vw;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;}
@@ -131,24 +136,20 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 .winner-score{display:flex;gap:40px;margin-top:18px;font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:rgba(255,255,255,0.5);}
 .winner-restart{margin-top:28px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:6px;padding:10px 44px;border:2px solid #ffd600;color:#ffd600;background:transparent;cursor:pointer;border-radius:6px;animation:blinkBorder 1s ease-in-out infinite alternate;}
 @keyframes blinkBorder{from{box-shadow:0 0 10px #ffd600}to{box-shadow:0 0 30px #ffd600,0 0 60px #ffd600}}
-
 /* ══════════════════════════════════════════════════════
    FATALITY SYSTEM CSS
 ══════════════════════════════════════════════════════ */
 #fatality-overlay{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.0);pointer-events:none;}
 #fatality-overlay.active{display:flex;pointer-events:all;}
-
 /* Sangue escorrendo */
 #blood-overlay{position:absolute;inset:0;pointer-events:none;z-index:55;opacity:0;transition:opacity 0.3s;}
 #blood-canvas{position:absolute;inset:0;width:100%;height:100%;}
-
 /* Texto FATALITY */
 #fatality-text-wrap{position:absolute;top:18%;width:100%;text-align:center;opacity:0;transform:scale(3) rotateX(45deg);transition:all 0.6s cubic-bezier(0.175,0.885,0.32,1.275);}
 #fatality-text-wrap.show{opacity:1;transform:scale(1) rotateX(0);}
 #fatality-word{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,14vw,160px);letter-spacing:16px;color:#ff0000;text-shadow:0 0 60px #ff0000,0 0 120px #880000,4px 4px 0 #000,8px 8px 0 rgba(0,0,0,0.5);animation:fatalityPulse 0.4s ease-in-out infinite alternate;}
 @keyframes fatalityPulse{from{text-shadow:0 0 40px #ff0000,0 0 80px #880000,4px 4px 0 #000}to{text-shadow:0 0 80px #ff2200,0 0 160px #aa0000,0 0 200px #660000,4px 4px 0 #000}}
 #fatality-winner-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3.5vw,42px);letter-spacing:8px;color:#fff;opacity:0.7;margin-top:6px;}
-
 /* Input display para FATALITY */
 #fatality-input-ui{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:10px;z-index:62;}
 #fatality-input-ui.visible{display:flex;}
@@ -162,17 +163,14 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
 #fatality-timer-bar{width:300px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
 #fatality-timer-fill{height:100%;background:linear-gradient(90deg,#ff0000,#ff6600);border-radius:2px;width:100%;transition:width 0.1s linear;}
 #fatality-winner-prompt{font-size:11px;letter-spacing:3px;color:rgba(255,100,100,0.5);text-align:center;}
-
 /* Tela de quem pode fazer fatality */
 #fatality-announce{position:absolute;top:28%;width:100%;text-align:center;pointer-events:none;z-index:61;display:none;}
 #fatality-announce.show{display:block;}
 #fa-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,5vw,56px);letter-spacing:6px;color:#ff4444;text-shadow:0 0 30px #ff0000;animation:msgPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;}
 #fa-sub{font-size:11px;letter-spacing:4px;color:rgba(255,68,68,0.5);margin-top:6px;}
-
 /* Cena do fatality - animação 3D */
 #fatality-scene{position:absolute;inset:0;pointer-events:none;z-index:58;display:none;}
 #fatality-scene.active{display:block;}
-
 /* Partículas de sangue via canvas */
 #fatality-blood-particles{position:absolute;inset:0;pointer-events:none;z-index:59;}
 </style>
@@ -210,7 +208,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     </div>
   </div>
 </div>
-
 <div id="vs-screen">
   <div class="vs-left" id="vs-left">
     <div class="vs-bar-p1"></div>
@@ -228,7 +225,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div class="vs-bar-p2"></div>
   </div>
 </div>
-
 <div id="canvas-container">
   <div id="hit-flash"></div>
   <div id="super-flash"></div>
@@ -237,7 +233,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div id="special-charge-bar"><div id="special-charge-fill"></div></div>
   </div>
   <button id="back-btn">← MENU</button>
-
   <!-- FATALITY SYSTEM -->
   <div id="blood-overlay">
     <canvas id="blood-canvas"></canvas>
@@ -259,7 +254,6 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
       <div id="fatality-winner-name"></div>
     </div>
   </div>
-
   <div id="hud">
     <div class="fighter-hud">
       <div class="fighter-name" id="p1-name">P1</div>
@@ -307,6 +301,11 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div id="combo-count" style="color:#ffd600">0</div>
     <div id="combo-label">COMBO</div>
     <div id="combo-hits"></div>
+    <div id="combo-pattern-name"></div>
+  </div>
+  <div id="super-combo-display">
+    <div id="super-combo-bar"><div id="super-combo-fill"></div></div>
+    <div id="super-combo-label">SPECIAL CHAIN</div>
   </div>
   <div id="msg"><div id="msg-text">K.O.</div><div id="msg-sub"></div></div>
   <div id="round-announce"><div id="round-announce-text">ROUND 1</div></div>
@@ -321,16 +320,17 @@ body{overflow:hidden;background:#000;font-family:'Rajdhani',sans-serif;color:#ff
     <div class="ctrl-box">
       <span class="ctrl-key">W</span> Pular &nbsp;<span class="ctrl-key">A</span><span class="ctrl-key">D</span> Mover &nbsp;<span class="ctrl-key">A+A</span> Dash<br>
       <span class="ctrl-key">SPACE</span> Soco &nbsp;<span class="ctrl-key">V</span> Chute &nbsp;<span class="ctrl-key">Q</span> Defesa<br>
-      <span class="ctrl-key">E</span> Especial &nbsp;<span class="ctrl-key">R</span> SUPER &nbsp;<span style="color:rgba(255,68,68,0.6)">☠ FATALITY após KO final</span>
+      <span class="ctrl-key">F</span> Cotovelo &nbsp;<span class="ctrl-key">C</span> Uppercut<br>
+      <span class="ctrl-key">E</span> Especial &nbsp;<span class="ctrl-key">R</span> SUPER &nbsp;<span style="color:rgba(255,200,0,0.7)">🔥 Combo Chains para + Dano!</span>
     </div>
     <div class="ctrl-box" style="text-align:right">
       <span class="ctrl-key">↑</span> Pular &nbsp;<span class="ctrl-key">←</span><span class="ctrl-key">→</span> Mover &nbsp;<span class="ctrl-key">←+←</span> Dash<br>
       <span class="ctrl-key">L</span> Soco &nbsp;<span class="ctrl-key">.</span> Chute &nbsp;<span class="ctrl-key">P</span> Defesa<br>
+      <span class="ctrl-key">K</span> Cotovelo &nbsp;<span class="ctrl-key">U</span> Uppercut<br>
       <span class="ctrl-key">O</span> Especial &nbsp;<span class="ctrl-key">I</span> SUPER (barra cheia)
     </div>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
@@ -396,7 +396,7 @@ const CHARACTERS = [
   { id:'tech',     name:'NEXUS',      icon:'🤖', tag:'TECNOLOGIA', desc:'Laser, drones e precisão cirúrgica.',
     color:0x263238, skinColor:0xb0bec5, c1:0x00e5ff, c2:0xffd600, emissive:0x0a1a1f, darkColor:0x0d1a1f, shoeColor:0x102030,
     particleRise:false, particleGrav:0.0, auraSpeed:3.5, ringColor:0x00e5ff, ringColor2:0xffd600,
-    eyeColor:0x00e5ff, glowColor:0x0077aa, hpGrad:'linear-gradient(90deg,#263238,#00e5ff)', stColor:'#00e5ff', lightColor:0x0099bb,
+    eyeColor:0x00e5ff, glowColor:0x0099bb, hpGrad:'linear-gradient(90deg,#263238,#00e5ff)', stColor:'#00e5ff', lightColor:0x0099bb,
     projColor:0x00e5ff, projDmg:38, superDmg:70, projType:'tech',
     specialDesc:'Laser de precisão', superDesc:'Bombardeio de drones',
     fatalityName:'OVERDRIVE LETAL', fatalityEmoji:'🤖💀🤖' },
@@ -485,29 +485,37 @@ const CHARACTERS = [
     specialDesc:'Ferrão de veneno', superDesc:'Praga venenosa total',
     fatalityName:'FERRÃO DA MORTE', fatalityEmoji:'🦂💀🦂' },
 ];
-
+// ══════════════════════════════════════════════════════
+//  COMBO SYSTEM
+// ══════════════════════════════════════════════════════
+const COMBO_PATTERNS = {
+  'Double Punch': {sequence:['punch','punch'],multiplier:1.35,damage:3,name:'🥊 DOUBLE PUNCH'},
+  'Kick Follow': {sequence:['punch','kick'],multiplier:1.5,damage:5,name:'⚡ KICK FOLLOW'},
+  'Triple Hit': {sequence:['punch','kick','punch'],multiplier:1.8,damage:8,name:'💥 TRIPLE HIT'},
+  'Punch Barrage': {sequence:['punch','punch','punch'],multiplier:1.6,damage:6,name:'🔥 PUNCH BARRAGE'},
+  'Spinning Attack': {sequence:['kick','kick','punch'],multiplier:2.0,damage:10,name:'🌪️ SPINNING ATTACK'},
+  'Execution': {sequence:['punch','punch','kick','kick'],multiplier:2.5,damage:15,name:'💀 EXECUTION'},
+  'Ultimate Combo': {sequence:['punch','kick','punch','kick','punch'],multiplier:3.0,damage:20,name:'⭐ ULTIMATE COMBO'},
+  'Elbow Rush': {sequence:['elbow','elbow'],multiplier:1.4,damage:4,name:'💢 ELBOW RUSH'},
+  'Elbow Chain': {sequence:['elbow','elbow','elbow'],multiplier:1.7,damage:7,name:'🌀 ELBOW CHAIN'},
+  'Sky Breaker': {sequence:['kick','uppercut'],multiplier:2.1,damage:12,name:'☄️ SKY BREAKER'},
+  'Launcher Combo': {sequence:['punch','punch','uppercut'],multiplier:2.3,damage:14,name:'🎯 LAUNCHER COMBO'},
+  'Rising Fury': {sequence:['elbow','punch','uppercut'],multiplier:2.6,damage:16,name:'🚀 RISING FURY'},
+  'Meteor Combo': {sequence:['elbow','kick','uppercut','punch'],multiplier:2.9,damage:18,name:'🌠 METEOR COMBO'},
+};
 // ══════════════════════════════════════════════════════
 //  FATALITY SYSTEM
 // ══════════════════════════════════════════════════════
-/*
-  Fatality por player:
-  P1: ↑ ↓ ← → + F (teclas: W S A D + F)
-  P2: ↑ ↓ ← → + K (teclas: ArrowUp ArrowDown ArrowLeft ArrowRight + K)
-  Tempo: 6 segundos após o KO final
-*/
-
 const FATALITY_SEQUENCES = {
-  1: ['up','down','left','right','F'],   // P1
-  2: ['up','down','left','right','K'],   // P2
+  1: ['up','down','left','right','F'],
+  2: ['up','down','left','right','K'],
 };
-
 const KEY_LABELS = {
   'up':'↑','down':'↓','left':'←','right':'→','F':'F','K':'K'
 };
-
 let fatalityState = {
   active: false,
-  winner: null,    // 1 ou 2
+  winner: null,
   loser: null,
   sequence: [],
   progress: 0,
@@ -515,22 +523,19 @@ let fatalityState = {
   timerInterval: null,
   executed: false,
   available: false,
-  wasLastRound: false, // só ativa no último round
+  wasLastRound: false,
 };
-
 // Partículas de sangue
 let bloodParticles = [];
 let bloodAnimFrame = null;
 const bloodCanvas = document.getElementById('fatality-blood-particles');
 const bloodCtx = bloodCanvas.getContext('2d');
-
 function resizeBloodCanvas(){
   bloodCanvas.width = innerWidth;
   bloodCanvas.height = innerHeight;
 }
 resizeBloodCanvas();
 window.addEventListener('resize', resizeBloodCanvas);
-
 function spawnBloodParticles(x, y, count, color='#cc0000'){
   for(let i=0;i<count;i++){
     const angle = Math.random()*Math.PI*2;
@@ -547,9 +552,7 @@ function spawnBloodParticles(x, y, count, color='#cc0000'){
     });
   }
 }
-
 function spawnBloodDrip(x, y, color='#aa0000'){
-  // gotas que escorrem pela tela
   for(let i=0;i<8;i++){
     bloodParticles.push({
       x: x + (Math.random()-0.5)*200,
@@ -565,7 +568,6 @@ function spawnBloodDrip(x, y, color='#aa0000'){
     });
   }
 }
-
 function animateBlood(){
   bloodCtx.clearRect(0,0,bloodCanvas.width,bloodCanvas.height);
   for(let i=bloodParticles.length-1;i>=0;i--){
@@ -579,7 +581,6 @@ function animateBlood(){
     bloodCtx.globalAlpha = p.life;
     bloodCtx.fillStyle = p.color;
     if(p.drip){
-      // gota alongada
       bloodCtx.beginPath();
       bloodCtx.ellipse(p.x,p.y,p.r*0.5,p.r*1.4,0,0,Math.PI*2);
     } else {
@@ -593,13 +594,10 @@ function animateBlood(){
     bloodAnimFrame = requestAnimationFrame(animateBlood);
   }
 }
-
 function startBloodAnimation(){
   if(bloodAnimFrame) cancelAnimationFrame(bloodAnimFrame);
   animateBlood();
 }
-
-// Construir a UI de input do fatality
 function buildFatalityInputUI(playerWinner) {
   const seq = FATALITY_SEQUENCES[playerWinner];
   const keysEl = document.getElementById('fatality-keys');
@@ -617,13 +615,11 @@ function buildFatalityInputUI(playerWinner) {
       keysEl.appendChild(sep);
     }
   });
-
   const promptEl = document.getElementById('fatality-winner-prompt');
   const pName = playerWinner === 1 ? (p1?p1.ch.name:'P1') : (p2?p2.ch.name:'P2');
   promptEl.textContent = `${pName} — INSIRA O CÓDIGO`;
   promptEl.style.color = playerWinner===1 ? '#00e5ff' : '#ff6600';
 }
-
 function updateFatalityKeyUI(progress){
   const seq = FATALITY_SEQUENCES[fatalityState.winner];
   seq.forEach((k,i)=>{
@@ -634,7 +630,6 @@ function updateFatalityKeyUI(progress){
     else if(i === progress) el.classList.add('active');
   });
 }
-
 function showFatalityPrompt(winner) {
   fatalityState.active = true;
   fatalityState.winner = winner;
@@ -643,24 +638,18 @@ function showFatalityPrompt(winner) {
   fatalityState.timeLeft = 6;
   fatalityState.executed = false;
   fatalityState.sequence = [...FATALITY_SEQUENCES[winner]];
-
-  // Anuncio "FINISH HIM!"
   const faText = document.getElementById('fa-text');
   const loserName = winner===1 ? (p2?p2.ch.name:'P2') : (p1?p1.ch.name:'P1');
   faText.textContent = `FINISH ${loserName}!`;
   const faEl = document.getElementById('fatality-announce');
   faEl.classList.add('show');
   setTimeout(()=>faEl.classList.remove('show'), 2400);
-
-  // Mostrar UI de input após 1.8s
   setTimeout(()=>{
     if(!fatalityState.active) return;
     buildFatalityInputUI(winner);
     const ui = document.getElementById('fatality-input-ui');
     ui.classList.add('visible');
     updateFatalityKeyUI(0);
-
-    // Timer visual
     let t = 6;
     const fill = document.getElementById('fatality-timer-fill');
     fatalityState.timerInterval = setInterval(()=>{
@@ -674,52 +663,37 @@ function showFatalityPrompt(winner) {
     }, 100);
   }, 1800);
 }
-
 function cancelFatality(){
   fatalityState.active = false;
   const ui = document.getElementById('fatality-input-ui');
   ui.classList.remove('visible');
-  // Mostrar tela de vitória normal
   showWinnerScreen(fatalityState.winner || 1, 'ko');
 }
-
 function executeFatality() {
   if(fatalityState.executed) return;
   fatalityState.executed = true;
   fatalityState.active = false;
   clearInterval(fatalityState.timerInterval);
-
   const ui = document.getElementById('fatality-input-ui');
   ui.classList.remove('visible');
-
   const winner = fatalityState.winner;
   const loser = fatalityState.loser;
   const winCh = winner===1 ? p1.ch : p2.ch;
   const loserFighter = loser===1 ? p1 : p2;
-
-  // --- Efeito de sangue na câmera (shake extremo) ---
   shakeCamera = 2.5;
-
-  // --- Escurecer a tela ---
   const hitFlash = document.getElementById('hit-flash');
   hitFlash.style.background = '#000';
   hitFlash.style.transition = 'opacity 0.8s';
   hitFlash.style.opacity = '0.85';
-
-  // Jogar vítima para longe
   if(loserFighter){
     loserFighter.vel.x = (winner===1?1:-1)*30;
     loserFighter.vel.y = 22;
     loserFighter.isGrounded = false;
   }
-
   playHit('super');
-
-  // Sangue explode do centro
   const cx = innerWidth/2, cy = innerHeight/2;
   setTimeout(()=>{
     startBloodAnimation();
-    // Explosão de sangue principal
     for(let i=0;i<8;i++){
       setTimeout(()=>{
         spawnBloodParticles(cx+(Math.random()-0.5)*300, cy+(Math.random()-0.5)*200, 30, '#cc0000');
@@ -730,8 +704,6 @@ function executeFatality() {
       }, i*120);
     }
   }, 300);
-
-  // Flash vermelho violento
   setTimeout(()=>{
     hitFlash.style.background = '#ff0000';
     hitFlash.style.opacity = '0.6';
@@ -740,24 +712,18 @@ function executeFatality() {
       hitFlash.style.opacity = '0.6';
     }, 150);
   }, 600);
-
-  // Texto FATALITY
   setTimeout(()=>{
     const overlay = document.getElementById('fatality-overlay');
     const textWrap = document.getElementById('fatality-text-wrap');
     const winnerNameEl = document.getElementById('fatality-winner-name');
     overlay.classList.add('active');
-
     document.getElementById('fatality-word').style.color = '#'+winCh.c1.toString(16).padStart(6,'0');
     document.getElementById('fatality-word').textContent = 'FATALITY';
     winnerNameEl.textContent = winCh.fatalityEmoji + ' ' + winCh.fatalityName + ' ' + winCh.fatalityEmoji;
     winnerNameEl.style.color = '#'+winCh.c1.toString(16).padStart(6,'0');
-
     setTimeout(()=>{
       textWrap.classList.add('show');
       playFatalitySFX();
-
-      // Mais sangue ao mostrar o texto
       for(let i=0;i<5;i++){
         setTimeout(()=>{
           spawnBloodDrip(Math.random()*innerWidth, 0, '#cc0000');
@@ -766,8 +732,6 @@ function executeFatality() {
       }
     }, 100);
   }, 1200);
-
-  // Tela de vitória após o fatality
   setTimeout(()=>{
     gameOver = true;
     const overlay = document.getElementById('fatality-overlay');
@@ -776,11 +740,9 @@ function executeFatality() {
     showWinnerScreen(winner, 'fatality');
   }, 5000);
 }
-
 function playFatalitySFX(){
   try{
     const ac = getAudio();
-    // Ominoso e grave
     const osc1=ac.createOscillator(),osc2=ac.createOscillator();
     const gain=ac.createGain(),comp=ac.createDynamicsCompressor();
     osc1.type='sawtooth';osc2.type='square';
@@ -793,7 +755,6 @@ function playFatalitySFX(){
     osc1.connect(comp);osc2.connect(comp);comp.connect(gain);gain.connect(ac.destination);
     osc1.start(ac.currentTime);osc2.start(ac.currentTime);
     osc1.stop(ac.currentTime+3);osc2.stop(ac.currentTime+3);
-    // Voz sintetizada "FATALITY" — sweep de frequência
     const osc3=ac.createOscillator(),g3=ac.createGain();
     osc3.type='square';
     osc3.frequency.setValueAtTime(220,ac.currentTime+0.1);
@@ -804,14 +765,10 @@ function playFatalitySFX(){
     osc3.start(ac.currentTime+0.1);osc3.stop(ac.currentTime+1.5);
   }catch(e){}
 }
-
-// Processar input do fatality
 function processFatalityKey(code){
   if(!fatalityState.active || fatalityState.executed) return;
   const seq = FATALITY_SEQUENCES[fatalityState.winner];
   const expected = seq[fatalityState.progress];
-
-  // Mapear código para direção
   let dir = null;
   const w = fatalityState.winner;
   if(w===1){
@@ -827,29 +784,22 @@ function processFatalityKey(code){
     else if(code==='ArrowRight') dir='right';
     else if(code==='KeyK') dir='K';
   }
-
   if(dir === null) return;
-
   if(dir === expected){
     fatalityState.progress++;
     updateFatalityKeyUI(fatalityState.progress);
-    // SFX de tecla certa
     try{
       const ac=getAudio();const o=ac.createOscillator(),g=ac.createGain();
       o.frequency.value=440+fatalityState.progress*120;
       g.gain.setValueAtTime(0.1,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.1);
       o.connect(g);g.connect(ac.destination);o.start(ac.currentTime);o.stop(ac.currentTime+0.12);
     }catch(e){}
-
     if(fatalityState.progress >= seq.length){
-      // FATALITY!
       executeFatality();
     }
   } else {
-    // Tecla errada — reseta progress
     fatalityState.progress = 0;
     updateFatalityKeyUI(0);
-    // SFX de erro
     try{
       const ac=getAudio();const o=ac.createOscillator(),g=ac.createGain();
       o.frequency.value=80;o.type='square';
@@ -858,7 +808,6 @@ function processFatalityKey(code){
     }catch(e){}
   }
 }
-
 // ══════════════════════════════════════════════════════
 //  MENU BACKGROUND
 // ══════════════════════════════════════════════════════
@@ -880,12 +829,10 @@ function processFatalityKey(code){
   }
   draw();
 })();
-
 // ══════════════════════════════════════════════════════
 //  CHARACTER SELECTION
 // ══════════════════════════════════════════════════════
 let selected = [null, null];
-
 function buildCharGrid() {
   const grid = document.getElementById('char-grid');
   CHARACTERS.forEach((ch, idx) => {
@@ -898,12 +845,10 @@ function buildCharGrid() {
     grid.appendChild(card);
   });
 }
-
 function selectChar(player, idx) {
   selected[player] = idx;
   updateSelectUI();
 }
-
 function updateSelectUI() {
   document.querySelectorAll('.char-card').forEach(card => {
     const idx = +card.dataset.idx;
@@ -914,7 +859,6 @@ function updateSelectUI() {
   updatePreview('p2-preview', selected[1], '#ff6600');
   document.getElementById('start-btn').disabled = (selected[0]===null||selected[1]===null);
 }
-
 function updatePreview(id, idx, color) {
   const box = document.getElementById(id);
   box.classList.toggle('p1-active', id==='p1-preview' && idx!==null);
@@ -933,10 +877,8 @@ function updatePreview(id, idx, color) {
     <div style="font-size:8px;color:#ffd600;opacity:0.6;text-align:center;letter-spacing:1px">★ ${ch.superDesc}</div>
     <div style="font-size:7px;color:#ff4444;opacity:0.5;text-align:center;margin-top:2px;letter-spacing:1px">☠ ${ch.fatalityName}</div>`;
 }
-
 buildCharGrid();
 document.getElementById('start-btn').addEventListener('click', showVsScreen);
-
 function showVsScreen() {
   if (selected[0]===null||selected[1]===null) return;
   const ch1=CHARACTERS[selected[0]], ch2=CHARACTERS[selected[1]];
@@ -952,11 +894,9 @@ function showVsScreen() {
   vs.classList.add('show');
   setTimeout(()=>{ vs.classList.remove('show'); startGame(); }, 2200);
 }
-
 function hexStr(n, a=1){
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
 }
-
 // ══════════════════════════════════════════════════════
 //  THREE.JS ENGINE
 // ══════════════════════════════════════════════════════
@@ -972,7 +912,6 @@ let roundWins={1:0,2:0};
 let comboFadeTimer=0,currentComboOwner=null,shakeCamera=0;
 let lastTime=0;
 let superCam=null;
-
 // ── Audio ──────────────────────────────────────────────
 let audioCtx = null;
 function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
@@ -992,7 +931,6 @@ function playHit(type='punch'){
     osc.start(ac.currentTime);osc.stop(ac.currentTime+(type==='super'?0.7:0.25));
   }catch(e){}
 }
-
 function initThree(){
   scene=new THREE.Scene();
   scene.fog=new THREE.FogExp2(0x080812,0.025);
@@ -1009,7 +947,6 @@ function initThree(){
   camera.position.set(0,5,20);
   window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 }
-
 function buildArena(ch1,ch2){
   const fm=new THREE.MeshStandardMaterial({color:0x0d0d1e,roughness:0.9,metalness:0.1});
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(36,18),fm);
@@ -1034,7 +971,6 @@ function buildArena(ch1,ch2){
     c.position.set(i+Math.random()*0.4,(h/2)-0.5+Math.random(),-9.3);scene.add(c);
   }
 }
-
 function buildLights(ch1,ch2){
   scene.add(new THREE.AmbientLight(0x151525,1.2));
   const ml=new THREE.DirectionalLight(0xffffff,1.5);ml.position.set(2,12,8);ml.castShadow=true;
@@ -1048,7 +984,6 @@ function buildLights(ch1,ch2){
     const s=new THREE.SpotLight(0xffffff,1.4,30,0.35,0.5);s.position.set(x,16,0);s.target.position.set(x,0,0);scene.add(s);scene.add(s.target);
   });
 }
-
 // ══════════════════════════════════════════════════════
 //  PARTICLE SYSTEM
 // ══════════════════════════════════════════════════════
@@ -1094,7 +1029,6 @@ function updateSys(sys,dt){
   const c1=new THREE.Color(sys.ch.c1),c2=new THREE.Color(sys.ch.c2);
   sys.mat.color.lerpColors(c1,c2,pulse);
 }
-
 // ══════════════════════════════════════════════════════
 //  ELEMENTAL PROJECTILE FACTORY
 // ══════════════════════════════════════════════════════
@@ -1103,7 +1037,6 @@ function buildElementalProjectile(ch, isSuper) {
   const scale = isSuper ? 1.8 : 1.0;
   const type = ch.projType;
   const col = ch.projColor;
-
   switch(type) {
     case 'water': {
       const core = new THREE.Mesh(new THREE.SphereGeometry(0.22*scale,16,16),
@@ -1151,7 +1084,6 @@ function buildElementalProjectile(ch, isSuper) {
   group.add(pl);
   return group;
 }
-
 function animateProjectileMesh(pr, dt) {
   const g=pr.mesh;const t=performance.now()*0.001;
   const type=pr.owner.ch.projType;
@@ -1160,7 +1092,6 @@ function animateProjectileMesh(pr, dt) {
   else if(type==='water'){g.children.forEach((c)=>{if(c.userData.rotAxis){c.rotateOnAxis(c.userData.rotAxis,c.userData.rotSpeed*dt);}});}
   else{g.rotation.y+=dt*3;}
 }
-
 // ══════════════════════════════════════════════════════
 //  PROJECTILE MANAGEMENT
 // ══════════════════════════════════════════════════════
@@ -1171,7 +1102,6 @@ function createProjectile(owner,isSuper=false){
   scene.add(meshGroup);
   projectiles.push({mesh:meshGroup,owner,speed:isSuper?18:14,life:0,maxLife:isSuper?2.0:1.6,hit:false,isSuper,dmg:isSuper?ch.superDmg:ch.projDmg,scale:isSuper?1.8:1.0});
 }
-
 function updateProjectiles(dt){
   for(let i=projectiles.length-1;i>=0;i--){
     const pr=projectiles[i];pr.life+=dt;
@@ -1185,7 +1115,11 @@ function updateProjectiles(dt){
     if(dist<(pr.isSuper?1.6:1.1)){
       pr.hit=true;
       const isBlocked=target.state===STATES.BLOCK&&target.stamina>0;
-      const fd=isBlocked?pr.dmg*0.1:pr.dmg;
+      let fd=isBlocked?pr.dmg*0.1:pr.dmg;
+      // Aplicar multiplicador de combo se houver
+      if(pr.owner.comboMultiplier>1 && !pr.isSuper){
+        fd *= pr.owner.comboMultiplier;
+      }
       target.hp=Math.max(0,target.hp-fd);scheduleGhostHp(target);
       if(!isBlocked){target.vel.x=pr.owner.facing*(pr.isSuper?14:10);target.vel.y=pr.isSuper?10:7;target.isGrounded=false;target.setState(STATES.HURT,true);pr.owner.combo++;currentComboOwner=pr.owner.id;comboFadeTimer=2.5;updateComboHUD(pr.owner.combo);pr.owner.superMeter=Math.min(MAX_SUPER,pr.owner.superMeter+20);}
       else{target.stamina-=22;target.superMeter=Math.min(MAX_SUPER,target.superMeter+3);}
@@ -1198,27 +1132,27 @@ function updateProjectiles(dt){
     }
   }
 }
-
 const ghostTimers={1:null,2:null};
 function scheduleGhostHp(fighter){
   const id=fighter.id;if(ghostTimers[id])clearTimeout(ghostTimers[id]);
   ghostTimers[id]=setTimeout(()=>{const el=document.getElementById(`hp${id}-ghost`);if(el)el.style.width=(fighter.hp/fighter.maxHp*100)+'%';},600);
 }
-
 // ══════════════════════════════════════════════════════
 //  FIGHTER CLASS
 // ══════════════════════════════════════════════════════
-const STATES={IDLE:'idle',WALK:'walk',JUMP:'jump',DASH:'dash',PUNCH:'punch',KICK:'kick',BLOCK:'block',HURT:'hurt',SPECIAL:'special',SUPER:'super',KO:'ko'};
-
+const STATES={IDLE:'idle',WALK:'walk',JUMP:'jump',DASH:'dash',PUNCH:'punch',KICK:'kick',BLOCK:'block',HURT:'hurt',SPECIAL:'special',SUPER:'super',KO:'ko',UPPERCUT:'uppercut',ELBOW:'elbow'};
 class Fighter{
   constructor({x,ch,id,facing}){
     this.id=id;this.ch=ch;this.facing=facing;
-    this.hp=100;this.maxHp=100;this.stamina=100;this.maxStamina=100;this.superMeter=0;
+    this.hp=250;this.maxHp=250;this.stamina=100;this.maxStamina=100;this.superMeter=0;
     this.state=STATES.IDLE;this.stateTime=0;this.combo=0;this.hitCooldown=0;this.shakeTime=0;
     this.auraTimer=0;this.specialFired=false;
     this.pos=new THREE.Vector3(x,FLOOR_Y,0);this.vel=new THREE.Vector3(0,0,0);
     this.isGrounded=true;this.opponent=null;
     this.dashCooldown=0;this.lastDirKey=null;this.lastDirTime=0;
+    // Novo: Sistema de combos avançado
+    this.comboSequence=[];this.comboTimer=0;this.currentComboPattern=null;
+    this.comboMultiplier=1.0;this.lastHitTime=0;this.superComboMeter=0;
     this._build();
   }
   _build(){
@@ -1267,7 +1201,6 @@ class Fighter{
     this.groundGlow.position.y=FLOOR_Y+0.01;scene.add(this.groundGlow);
     scene.add(this.group);
   }
-
   setState(s,force=false){
     if(!force&&this.state===STATES.KO)return;
     if(this.state!==s){
@@ -1275,31 +1208,32 @@ class Fighter{
       this.state=s;this.stateTime=0;this.specialFired=false;
     }
   }
-
+  _isBusy(){
+    return this.state===STATES.PUNCH||this.state===STATES.KICK||this.state===STATES.SPECIAL||this.state===STATES.SUPER||this.state===STATES.UPPERCUT||this.state===STATES.ELBOW;
+  }
   applyControl(input){
     if(this.state===STATES.KO||this.state===STATES.HURT)return;
     if(this.opponent)this.facing=this.opponent.pos.x>this.pos.x?1:-1;
     this.dashCooldown=Math.max(0,this.dashCooldown-1/60);
     if(input.block){this.setState(STATES.BLOCK);this.vel.x*=0.6;this.regenStamina(0.012);return;}
     if(input.superKey&&this.superMeter>=MAX_SUPER&&this.state!==STATES.SUPER){this.superMeter=0;this.setState(STATES.SUPER);updateSuperBar(this);return;}
-    if(input.special&&this.stamina>=30&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER){this.stamina-=30;this.setState(STATES.SPECIAL);}
-    if(input.punch&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.stamina>=8){this.stamina-=8;this.setState(STATES.PUNCH);}
-    if(input.kick&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.stamina>=10){this.stamina-=10;this.setState(STATES.KICK);}
+    if(input.special&&this.stamina>=30&&!this._isBusy()){this.stamina-=30;this.setState(STATES.SPECIAL);}
+    if(input.uppercut&&this.stamina>=18&&!this._isBusy()){this.stamina-=18;this.setState(STATES.UPPERCUT);}
+    if(input.elbow&&this.stamina>=6&&!this._isBusy()){this.stamina-=6;this.setState(STATES.ELBOW);}
+    if(input.punch&&!this._isBusy()&&this.stamina>=8){this.stamina-=8;this.setState(STATES.PUNCH);}
+    if(input.kick&&!this._isBusy()&&this.stamina>=10){this.stamina-=10;this.setState(STATES.KICK);}
     const now=performance.now();let dashDir=0;
     if(input.left){if(this.lastDirKey==='left'&&now-this.lastDirTime<200&&this.dashCooldown<=0){dashDir=-1;this.dashCooldown=0.7;}else if(this.lastDirKey!=='left'||now-this.lastDirTime>200){this.lastDirKey='left';this.lastDirTime=now;}}
     else if(input.right){if(this.lastDirKey==='right'&&now-this.lastDirTime<200&&this.dashCooldown<=0){dashDir=1;this.dashCooldown=0.7;}else if(this.lastDirKey!=='right'||now-this.lastDirTime>200){this.lastDirKey='right';this.lastDirTime=now;}}
-    if(dashDir!==0&&this.isGrounded&&this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER){this.vel.x=dashDir*22;this.setState(STATES.DASH);}
+    if(dashDir!==0&&this.isGrounded&&!this._isBusy()){this.vel.x=dashDir*22;this.setState(STATES.DASH);}
     const spd=9;const vx=input.left?-spd:input.right?spd:0;
-    if(this.state!==STATES.PUNCH&&this.state!==STATES.KICK&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER&&this.state!==STATES.DASH){this.vel.x=vx;if(vx!==0)this.setState(STATES.WALK);else if(this.state===STATES.WALK)this.setState(STATES.IDLE);}
-    if(input.jump&&this.isGrounded&&this.state!==STATES.SPECIAL&&this.state!==STATES.SUPER){this.vel.y=18;this.isGrounded=false;this.setState(STATES.JUMP);}
+    if(!this._isBusy()&&this.state!==STATES.DASH){this.vel.x=vx;if(vx!==0)this.setState(STATES.WALK);else if(this.state===STATES.WALK)this.setState(STATES.IDLE);}
+    if(input.jump&&this.isGrounded&&!this._isBusy()){this.vel.y=18;this.isGrounded=false;this.setState(STATES.JUMP);}
     if(this.state===STATES.IDLE||this.state===STATES.WALK)this.regenStamina(0.008);
   }
-
   regenStamina(r){this.stamina=Math.min(this.maxStamina,this.stamina+r*60);}
-
   physicsStep(dt){
     if(this.state===STATES.KO){
-      // Durante fatality, deixar a física continuar para a vítima voar
       if(!this.isGrounded)this.vel.y+=GRAVITY*dt;
       this.pos.x+=this.vel.x*dt;this.pos.y+=this.vel.y*dt;
       if(this.pos.y<=FLOOR_Y){this.pos.y=FLOOR_Y;this.vel.y=0;this.isGrounded=true;}
@@ -1316,10 +1250,11 @@ class Fighter{
     if(this.isGrounded&&this.state!==STATES.WALK&&this.state!==STATES.DASH)this.vel.x*=0.72;
     if(this.state===STATES.DASH&&Math.abs(this.vel.x)<3)this.setState(STATES.IDLE);
   }
-
   animate(dt){
     const t=performance.now()*0.001;
     this.stateTime+=dt;this.auraTimer+=dt;
+    this.comboTimer-=dt;
+    if(this.comboTimer<=0){this.comboSequence=[];this.comboMultiplier=1.0;this.currentComboPattern=null;}
     this.group.position.set(this.pos.x,this.pos.y,this.pos.z);
     this.root.rotation.y=this.facing>0?-Math.PI/2:Math.PI/2;
     if(this.shakeTime>0){this.group.position.x+=(Math.random()-0.5)*0.15;this.shakeTime-=dt;}
@@ -1333,7 +1268,6 @@ class Fighter{
     const lref=this.id===1?p1Light:p2Light;
     lref.position.set(this.pos.x,this.pos.y+FIGHTER_GROUND_Y+0.5,this.pos.z+1.5);
   }
-
   _fx(dt,t){
     const sys=this.id===1?sys1:sys2;
     this.auraRing.rotation.y+=dt*this.ch.auraSpeed;
@@ -1368,7 +1302,6 @@ class Fighter{
     this.groundGlow.scale.setScalar(1+(0.5+0.5*Math.sin(performance.now()*0.001*4))*0.12);
     if(this.state===STATES.KO){this.auraRing.material.opacity*=0.97;this.auraRing2.material.opacity*=0.97;}
   }
-
   _pose(dt,t){
     const la=0.15;
     const setA=(lx,rx,lz=0,rz=0)=>{this.armPivotL.rotation.x+=(lx-this.armPivotL.rotation.x)*la;this.armPivotR.rotation.x+=(rx-this.armPivotR.rotation.x)*la;this.armPivotL.rotation.z+=(lz-this.armPivotL.rotation.z)*la;this.armPivotR.rotation.z+=(rz-this.armPivotR.rotation.z)*la;};
@@ -1392,6 +1325,21 @@ class Fighter{
         else if(k<0.5){const w=(k-0.2)/0.3;this.legPivotR.rotation.x=-0.9-w*0.9;this.torso.rotation.y=-0.25-w*0.2;this.torso.rotation.z=w*0.08;this.root.position.y=FIGHTER_GROUND_Y+0.07+Math.sin(w*Math.PI*0.95)*0.1;this.armPivotL.rotation.z=0.4+w*0.3;this.armPivotR.rotation.z=-0.3-w*0.2;const kp=this.getKickPoint();spawnP(sys,kp.x,kp.y,kp.z,5,'trail');}
         else if(k<0.68){const w=(k-0.5)/0.18;this.legPivotR.rotation.x=-1.8+Math.sin(w*Math.PI)*0.15;this.torso.rotation.y=-0.45+w*0.1;this.root.position.y=FIGHTER_GROUND_Y+0.05;}
         else{this.legPivotR.rotation.x*=0.72;this.torso.rotation.y*=0.78;this.torso.rotation.z*=0.78;this.torso.rotation.x*=0.78;this.armPivotL.rotation.z*=0.78;this.armPivotR.rotation.z*=0.78;this.root.position.y+=(FIGHTER_GROUND_Y-this.root.position.y)*0.2;if(k>=1){this.legPivotR.rotation.x=0;this.torso.rotation.y=0;this.torso.rotation.z=0;this.setState(STATES.IDLE);}}
+        break;
+      }
+      case STATES.UPPERCUT:{
+        const DUR=0.5;const p=this.stateTime/DUR;const sys=this.id===1?sys1:sys2;
+        if(p<0.25){const w=p/0.25;this.armPivotR.rotation.x=w*0.8;this.armPivotR.position.z=-w*0.2;this.torso.rotation.x=w*0.15;this.legPivotR.rotation.x=w*0.3;this.root.position.y=FIGHTER_GROUND_Y-w*0.12;}
+        else if(p<0.55){const w=(p-0.25)/0.3;this.armPivotR.rotation.x=0.8-w*2.6;this.armPivotR.position.z=-0.2+w*0.6;this.torso.rotation.x=0.15-w*0.35;this.legPivotR.rotation.x=0.3-w*0.3;this.root.position.y=FIGHTER_GROUND_Y-0.12+w*0.5;const hp=this.getHitPoint();spawnP(sys,hp.x,hp.y+0.3,hp.z,6,'trail');}
+        else if(p<0.72){const w=(p-0.55)/0.17;this.armPivotR.rotation.x=-1.8-Math.sin(w*Math.PI)*0.2;this.root.position.y=FIGHTER_GROUND_Y+0.38-w*0.1;}
+        else{this.armPivotR.rotation.x+=(-1.2-this.armPivotR.rotation.x)*0.2;this.armPivotR.position.z*=0.75;this.torso.rotation.x*=0.8;this.legPivotR.rotation.x*=0.8;this.root.position.y+=(FIGHTER_GROUND_Y-this.root.position.y)*0.15;if(p>=1){this.setState(STATES.IDLE);this.torso.rotation.x=0;this.root.position.y=FIGHTER_GROUND_Y;}}
+        break;
+      }
+      case STATES.ELBOW:{
+        const DUR=0.28;const p=this.stateTime/DUR;const sys=this.id===1?sys1:sys2;
+        if(p<0.3){const w=p/0.3;this.armPivotR.rotation.x=w*0.2;this.armPivotR.rotation.z=-w*1.2;this.torso.rotation.y=w*0.3;}
+        else if(p<0.55){const w=(p-0.3)/0.25;this.armPivotR.rotation.z=-1.2+w*0.1;this.torso.rotation.y=0.3-w*0.05;const hp=this.getHitPoint();spawnP(sys,hp.x,hp.y,hp.z,4,'trail');}
+        else{this.armPivotR.rotation.z*=0.7;this.armPivotR.rotation.x*=0.7;this.torso.rotation.y*=0.7;if(p>=1){this.setState(STATES.IDLE);this.torso.rotation.y=0;}}
         break;
       }
       case STATES.BLOCK:{setA(-1.2,-1.2,0.2,-0.2);this.armPivotL.position.z=0.3;this.armPivotR.position.z=0.3;this.torso.rotation.x=0.15;setL(0.2,-0.2);break;}
@@ -1418,26 +1366,58 @@ class Fighter{
     if(this.state!==STATES.BLOCK){this.armPivotL.position.z*=0.8;this.armPivotR.position.z*=0.8;}
     if(this.state!==STATES.DASH)this.root.rotation.z*=0.8;
   }
-
   getHitPoint(){return new THREE.Vector3(this.pos.x+this.facing*1.2,this.pos.y+FIGHTER_GROUND_Y+0.3,this.pos.z);}
   getKickPoint(){return new THREE.Vector3(this.pos.x+this.facing*1.3,this.pos.y+FIGHTER_GROUND_Y*0.3,this.pos.z);}
 }
-
 // ══════════════════════════════════════════════════════
-//  COMBAT
+//  COMBAT SYSTEM COM COMBOS AVANÇADOS
 // ══════════════════════════════════════════════════════
-const HIT_FRAMES={punch:[0.42,0.62],kick:[0.50,0.68]};
-
+const HIT_FRAMES={punch:[0.42,0.62],kick:[0.50,0.68],uppercut:[0.30,0.52],elbow:[0.25,0.50]};
+function checkComboPattern(fighter){
+  for(const [name,pattern] of Object.entries(COMBO_PATTERNS)){
+    if(fighter.comboSequence.length===pattern.sequence.length){
+      const matches=fighter.comboSequence.every((a,i)=>a===pattern.sequence[i]);
+      if(matches){
+        fighter.currentComboPattern=name;
+        fighter.comboMultiplier=pattern.multiplier;
+        // Animar o padrão de combo
+        showComboPattern(name,fighter);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function showComboPattern(name,fighter){
+  const pattern=COMBO_PATTERNS[name];
+  const el=document.getElementById('combo-pattern-name');
+  if(el){
+    el.textContent=pattern.name;
+    el.style.color='#'+fighter.ch.c1.toString(16).padStart(6,'0');
+    el.style.textShadow=`0 0 20px #${fighter.ch.c1.toString(16).padStart(6,'0')}`;
+  }
+}
 function checkCombat(){
   [[p1,p2],[p2,p1]].forEach(([atk,vic])=>{
     if(atk.hitCooldown>0){atk.hitCooldown-=1/60;return;}
-    const{state,stateTime}=atk;let range=null,dmg=0,hitPoint=null,knockback=0,liftY=0,hitType='punch';
-    if(state===STATES.PUNCH){const p=stateTime/0.38;if(p>=HIT_FRAMES.punch[0]&&p<=HIT_FRAMES.punch[1]){range=2.2;dmg=7+Math.random()*4;hitPoint=atk.getHitPoint();knockback=4;liftY=5;hitType='punch';}}
-    else if(state===STATES.KICK){const p=stateTime/0.44;if(p>=HIT_FRAMES.kick[0]&&p<=HIT_FRAMES.kick[1]){range=2.6;dmg=12+Math.random()*6;hitPoint=atk.getKickPoint();knockback=6;liftY=6;hitType='kick';}}
+    const{state,stateTime}=atk;let range=null,dmg=0,hitPoint=null,knockback=0,liftY=0,hitType='punch',attackType=null;
+    if(state===STATES.PUNCH){const p=stateTime/0.38;if(p>=HIT_FRAMES.punch[0]&&p<=HIT_FRAMES.punch[1]){range=2.2;dmg=7+Math.random()*4;hitPoint=atk.getHitPoint();knockback=4;liftY=5;hitType='punch';attackType='punch';}}
+    else if(state===STATES.KICK){const p=stateTime/0.44;if(p>=HIT_FRAMES.kick[0]&&p<=HIT_FRAMES.kick[1]){range=2.6;dmg=12+Math.random()*6;hitPoint=atk.getKickPoint();knockback=6;liftY=6;hitType='kick';attackType='kick';}}
+    else if(state===STATES.UPPERCUT){const p=stateTime/0.5;if(p>=HIT_FRAMES.uppercut[0]&&p<=HIT_FRAMES.uppercut[1]){range=2.1;dmg=16+Math.random()*7;hitPoint=atk.getHitPoint();knockback=3;liftY=15;hitType='special';attackType='uppercut';}}
+    else if(state===STATES.ELBOW){const p=stateTime/0.28;if(p>=HIT_FRAMES.elbow[0]&&p<=HIT_FRAMES.elbow[1]){range=1.8;dmg=5+Math.random()*3;hitPoint=atk.getHitPoint();knockback=2;liftY=2;hitType='punch';attackType='elbow';}}
     if(!range)return;
     const dist=Math.hypot(atk.pos.x-vic.pos.x,atk.pos.y-vic.pos.y);if(dist>range)return;
     const isBlocked=vic.state===STATES.BLOCK&&vic.stamina>0;
     if(isBlocked){dmg*=0.12;vic.stamina-=14;knockback*=0.25;liftY=0;}
+    
+    // Sistema de combo
+    if(!isBlocked&&attackType){
+      atk.comboSequence.push(attackType);
+      atk.comboTimer=2.5; // 2.5 segundos para próximo ataque
+      checkComboPattern(atk);
+      dmg*=atk.comboMultiplier; // Aplicar multiplicador
+    }
+    
     vic.hp=Math.max(0,vic.hp-dmg);scheduleGhostHp(vic);
     const dir=vic.pos.x-atk.pos.x>0?1:-1;vic.vel.x=dir*knockback;vic.vel.y=isBlocked?0:liftY;
     if(!isBlocked)vic.isGrounded=false;vic.shakeTime=0.15;atk.hitCooldown=0.2;
@@ -1452,7 +1432,6 @@ function checkCombat(){
     if(vic.hp<=0&&vic.state!==STATES.KO){vic.setState(STATES.KO,true);endRound(atk.id);}
   });
 }
-
 // ══════════════════════════════════════════════════════
 //  HUD HELPERS
 // ══════════════════════════════════════════════════════
@@ -1474,7 +1453,6 @@ function showDmgPopup(pos,dmg,blocked,isSuper){
 function updateComboHUD(count){const el=document.getElementById('combo-display');document.getElementById('combo-count').textContent=count;document.getElementById('combo-hits').textContent=count>1?`${count} HITS`:'';if(count>=2){el.style.opacity=1;const cols=['#fff','#00e5ff','#ffd600','#ff9100','#ff1744','#e040fb'];document.getElementById('combo-count').style.color=cols[Math.min(count-1,cols.length-1)];document.getElementById('combo-count').style.textShadow=`0 0 30px ${cols[Math.min(count-1,cols.length-1)]}`;}else el.style.opacity=0;}
 function showAnnounce(text,sub='',duration=2500){const el=document.getElementById('msg');document.getElementById('msg-text').textContent=text;document.getElementById('msg-sub').textContent=sub;el.style.display='block';setTimeout(()=>el.style.display='none',duration);}
 function showRoundAnnounce(text){const el=document.getElementById('round-announce');document.getElementById('round-announce-text').textContent=text;el.style.display='block';setTimeout(()=>el.style.display='none',1600);}
-
 // ══════════════════════════════════════════════════════
 //  ROUNDS
 // ══════════════════════════════════════════════════════
@@ -1485,28 +1463,21 @@ function endRound(wid){
   if(!roundActive)return;
   roundActive=false;clearInterval(timerInterval);
   roundWins[wid]++;updateRoundPips();
-
-  // Verificar se é o round decisivo (último round que encerra o match)
   const winsNeeded = Math.ceil(maxRounds/2);
   const isMatchOver = (roundWins[wid] >= winsNeeded);
-
   if(isMatchOver) {
-    // É o KO final — acionar sistema de fatality
     setTimeout(()=>{
       showAnnounce('K.O.!','',1600);
     }, 200);
     setTimeout(()=>{
-      // Escurecer o cenário
       const hitFlash = document.getElementById('hit-flash');
       hitFlash.style.transition = 'opacity 1.2s';
       hitFlash.style.background = 'rgba(80,0,0,0.0)';
       hitFlash.style.opacity = '0.4';
-      // Ativar prompt de fatality
       fatalityState.wasLastRound = true;
       showFatalityPrompt(wid);
     }, 1800);
   } else {
-    // Round normal, não é o final
     setTimeout(()=>{
       showAnnounce('K.O.',`${wid===1?p1.ch.name:p2.ch.name} vence!`,2000);
       checkMatchEnd(wid,'ko');
@@ -1531,6 +1502,7 @@ function showWinnerScreen(wid,reason){
 function resetFighters(){
   [p1,p2].forEach((f,i)=>{
     f.hp=f.maxHp;f.stamina=f.maxStamina;f.superMeter=0;f.combo=0;f.state=STATES.IDLE;f.stateTime=0;f.specialFired=false;
+    f.comboSequence=[];f.comboTimer=0;f.comboMultiplier=1.0;f.currentComboPattern=null;
     f.pos.set(i===0?-5:5,FLOOR_Y,0);f.vel.set(0,0,0);f.isGrounded=true;f.facing=i===0?1:-1;
     f.root.rotation.set(0,0,0);f.root.position.set(0,FIGHTER_GROUND_Y,0);
     f.auraRing.material.opacity=0.6;f.auraRing2.material.opacity=0.45;
@@ -1544,7 +1516,6 @@ function resetFighters(){
   document.getElementById('fatality-input-ui').classList.remove('visible');
   document.getElementById('fatality-announce').classList.remove('show');
 }
-
 // ══════════════════════════════════════════════════════
 //  INPUT
 // ══════════════════════════════════════════════════════
@@ -1552,7 +1523,6 @@ const keys={};
 window.addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
-  // Fatality input
   if(fatalityState.active && !fatalityState.executed){
     processFatalityKey(e.code);
   }
@@ -1560,10 +1530,9 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
 function getInput(pid){
   const gps=navigator.getGamepads?navigator.getGamepads():[];const gp=gps[pid-1];
-  if(pid===1)return{left:keys['KeyA']||(gp?.axes[0]<-0.3),right:keys['KeyD']||(gp?.axes[0]>0.3),jump:keys['KeyW']||(gp?.buttons[0]?.pressed),punch:keys['Space']||(gp?.buttons[2]?.pressed),kick:keys['KeyV']||(gp?.buttons[3]?.pressed),block:keys['KeyQ']||(gp?.buttons[1]?.pressed),special:keys['KeyE']||(gp?.buttons[4]?.pressed),superKey:keys['KeyR']||(gp?.buttons[5]?.pressed)};
-  return{left:keys['ArrowLeft']||(gp?.axes[0]<-0.3),right:keys['ArrowRight']||(gp?.axes[0]>0.3),jump:keys['ArrowUp']||(gp?.buttons[0]?.pressed),punch:keys['KeyL']||(gp?.buttons[2]?.pressed),kick:keys['Period']||(gp?.buttons[3]?.pressed),block:keys['KeyP']||(gp?.buttons[1]?.pressed),special:keys['KeyO']||(gp?.buttons[4]?.pressed),superKey:keys['KeyI']||(gp?.buttons[5]?.pressed)};
+  if(pid===1)return{left:keys['KeyA']||(gp?.axes[0]<-0.3),right:keys['KeyD']||(gp?.axes[0]>0.3),jump:keys['KeyW']||(gp?.buttons[0]?.pressed),punch:keys['Space']||(gp?.buttons[2]?.pressed),kick:keys['KeyV']||(gp?.buttons[3]?.pressed),block:keys['KeyQ']||(gp?.buttons[1]?.pressed),special:keys['KeyE']||(gp?.buttons[4]?.pressed),superKey:keys['KeyR']||(gp?.buttons[5]?.pressed),uppercut:keys['KeyC']||(gp?.buttons[6]?.pressed),elbow:keys['KeyF']||(gp?.buttons[7]?.pressed)};
+  return{left:keys['ArrowLeft']||(gp?.axes[0]<-0.3),right:keys['ArrowRight']||(gp?.axes[0]>0.3),jump:keys['ArrowUp']||(gp?.buttons[0]?.pressed),punch:keys['KeyL']||(gp?.buttons[2]?.pressed),kick:keys['Period']||(gp?.buttons[3]?.pressed),block:keys['KeyP']||(gp?.buttons[1]?.pressed),special:keys['KeyO']||(gp?.buttons[4]?.pressed),superKey:keys['KeyI']||(gp?.buttons[5]?.pressed),uppercut:keys['KeyU']||(gp?.buttons[6]?.pressed),elbow:keys['KeyK']||(gp?.buttons[7]?.pressed)};
 }
-
 // ══════════════════════════════════════════════════════
 //  SUPER CAM
 // ══════════════════════════════════════════════════════
@@ -1572,7 +1541,6 @@ function initSuperCam(owner){
   const target=owner===p1?p2:p1;
   superCam={owner,phase:'intro',time:0,duration:0.8,behindX:owner.pos.x-owner.facing*4,shooterY:owner.pos.y+FIGHTER_GROUND_Y+1.2,closeZ:10,targetX:target.pos.x,targetY:target.pos.y+FIGHTER_GROUND_Y+0.8};
 }
-
 // ══════════════════════════════════════════════════════
 //  GAME LOOP
 // ══════════════════════════════════════════════════════
@@ -1604,7 +1572,6 @@ function gameLoop(ts){
   rimL.intensity=4+Math.sin(t*2.1)*0.8;rimR.intensity=4+Math.sin(t*3.7)*0.8;
   renderer.render(scene,camera);
 }
-
 // ══════════════════════════════════════════════════════
 //  START GAME
 // ══════════════════════════════════════════════════════
@@ -1638,10 +1605,7 @@ function startGame(){
     lastTime=0;requestAnimationFrame(gameLoop);startRound(1);
   });
 }
-
 document.getElementById('back-btn').addEventListener('click',()=>location.reload());
 </script>
 </body>
 </html>
-HEREDOC_END
-echo "Feito: $(wc -c < /mnt/user-data/outputs/iron_fist_3d.html) bytes"
